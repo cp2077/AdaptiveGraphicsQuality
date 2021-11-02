@@ -1,4 +1,6 @@
 local Helpers = require("Modules/Helpers")
+local Settings = require("Modules/Settings")
+local GraphicsQuality = require("Modules/GraphicsQuality")
 local Vars = require("Modules/Vars")
 
 local Config = {
@@ -50,6 +52,45 @@ function Config.SaveConfig()
 end
 
 function Migrate()
+  local defaultSettings = GraphicsQuality.GetCurrentPreset()
+
+  for _, currSetting in pairs(Settings.list) do
+    for _, currPreset in pairs(Config.inner.presets) do
+      if currPreset == 0 then
+        break
+      end
+
+      local exists = false
+      for _, currPresetSetting in pairs(currPreset) do
+        -- if "var" already exists in the config, skip it.
+        if currPresetSetting.var == currSetting.var then
+          exists = true
+          break
+        end
+      end
+
+      if not exists then
+        local currValue = nil
+        for _, currDefaultSetting in pairs(defaultSettings) do
+          if currDefaultSetting.var == currSetting.var then
+            currValue = currDefaultSetting.value
+          end
+        end
+
+        if currValue == nil then
+          break
+        end
+
+
+        table.insert(currPreset, {
+          var = currSetting.var,
+          kind = currSetting.kind,
+          value = currValue
+        })
+      end
+
+    end
+  end
 
   -- ...
   WriteConfig()

@@ -31,6 +31,10 @@ local Settings = {
     { repaint = true, variant = "gameSettings", var = "/video/display/WindowMode", kind = "string_list", options = {} },
     { variant = "gameSettings", var = "/video/display/VSync", kind = "string_list", options = {} },
 
+    -- Misc
+    { variant = "gameSettings", var = "/video/display/MaximumFPS_OnOff", kind = "bool", options = {} },
+    { variant = "gameSettings", var = "/video/display/MaximumFPS_Value", kind = "int", options = {} },
+
     -- RTX
     { variant = "gameSettings", var = "/graphics/raytracing/RayTracing", kind = "bool", options = {} },
     { variant = "gameSettings", var = "/graphics/raytracing/RayTracedReflections", kind = "bool", options = {} },

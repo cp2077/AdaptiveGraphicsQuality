@@ -1,8 +1,9 @@
+local GraphicsQuality = {}
+
 local Settings = require("Modules/Settings")
 local GameSettings = require("Modules/GameSettings")
 local Helpers = require("Modules/Helpers")
 
-local GraphicsQuality = {}
 
 function ConfirmChanges()
   if GameSettings.NeedsConfirmation() or GameSettings.NeedsReload() or GameSettings.NeedsRestart() then

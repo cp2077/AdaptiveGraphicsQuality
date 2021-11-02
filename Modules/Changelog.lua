@@ -1,5 +1,12 @@
 local Changelog = {
   {
+    version = "1.1.0",
+    changes = {
+      'Feature: "Menu" preset is now "Inventory/Character Creation" preset. It will only be active in the inventory and character creation menu. This is mainly useful for DLSS.',
+      'Feature: Added "Max FPS" option'
+    }
+  },
+  {
     version = "1.0.4",
     changes = {
       "Patch 1.3 support"

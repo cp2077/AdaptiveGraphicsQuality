@@ -1,13 +1,12 @@
+local GraphicsQuality = require("Modules/GraphicsQuality")
+local Config = require("Modules/Config")
 local Vars = require("Modules/Vars")
 local GameUI = require("Modules/GameUI")
 local Helpers = require("Modules/Helpers")
-local Config = require("Modules/Config")
-local GraphicsQuality = require("Modules/GraphicsQuality")
 local Tweaks = require("Modules/Tweaks")
 local Window = require("Modules/Window")
-local Cron = require("Modules/Cron")
 
-App = { ["version"] = "1.0.4" }
+App = { ["version"] = "1.1.0" }
 
 App.inited = false
 App.isOverlayOpen = false
@@ -32,7 +31,7 @@ function IsPhotomode()
   return GameUI.IsPhoto()
 end
 function IsMenu()
-  return GameUI.IsMenu()
+  return GameUI.GetMenu() == "NewGame" or GameUI.GetMenu() == "Hub"
 end
 function IsScene()
   return GameUI.IsScene()
@@ -145,8 +144,6 @@ function App.new()
   local checkEvery = Vars.CHECK_COMBAR_EVERY_MS / 1000
 
   registerForEvent("onUpdate", function(delta)
-    -- Cron.Update(delta)
-
     if not App.inited or not Config.isReady then
       return
     end
@@ -205,6 +202,7 @@ function App.new()
       SetPresetIfNeeded()
     end
   end
+
   function OnPhotomodeExit()
     if Config.inner.enabled.photo then
       SetPresetIfNeeded()
@@ -272,6 +270,8 @@ function App.new()
     Config.InitConfig()
     assertDefaultPresetsExist()
     initTweaks()
+
+    GameUI.Observe(GameUI.Event.MenuNav, SetPresetIfNeeded)
 
     GameUI.OnPhotoModeOpen(OnPhotomodeEnter)
     GameUI.OnPhotoModeClose(OnPhotomodeExit)

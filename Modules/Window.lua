@@ -18,7 +18,7 @@ ImGuiWindowFlags = ImGuiWindowFlags
 function GetTreeName(k)
   if k == "vehicle" then return "Vehicle" end
   if k == "normal" then return "Normal" end
-  if k == "menu" then return "Menu" end
+  if k == "menu" then return "Inv & CC" end
   if k == "photo" then return "PhotoMode" end
   if k == "combat" then return "Combat" end
   if k == "scene" then return "Cutscene" end
@@ -112,6 +112,7 @@ end
 ---
 
 local function renderPresetTab(presetName)
+
   local buttonName = " " .. GetTreeName(presetName) .. " "
 
   local colors = {}
@@ -122,6 +123,10 @@ local function renderPresetTab(presetName)
   if not Config.inner.enabled[presetName] then
     colors = {{ ImGuiCol.Text, 1,1,1, 0.45 }}
     tooltip = "Disabled"
+  end
+
+  if presetName == "menu" then
+    tooltip = "[Inventory and Character Creator] " .. (tooltip or "")
   end
   if App.currentPreset == presetName then
     if currPresetTab == presetName then
