@@ -3,7 +3,7 @@ local GraphicsQuality = {}
 local Settings = require("Modules/Settings")
 local GameSettings = require("Modules/GameSettings")
 local Helpers = require("Modules/Helpers")
-
+local Cron = require("Modules/Cron")
 
 function ConfirmChanges()
   if GameSettings.NeedsConfirmation() or GameSettings.NeedsReload() or GameSettings.NeedsRestart() then
@@ -18,36 +18,28 @@ function GraphicsQuality.SetSettings(var, val)
   ConfirmChanges()
 end
 
-function GraphicsQuality.SetPreset(preset, presetName)
-  -- DOF should always be enabled for the photomode otherwise it breaks
-  if presetName == "photo" then
-    for _,presetSettings in pairs(preset) do
-      if presetSettings.var == "/graphics/basic/DepthOfField" then
-        presetSettings.value = true
-        break
-      end
+function GraphicsQuality.SetPreset(preset, presetName, delay)
+  if delay == nil then
+    delay = 0
+  end
+
+  Cron.After(delay, function()
+    if IsCurrentPreset(preset) then
+      Helpers.PrintDebugMsg("skipping the same preset")
+      return
     end
-  end
 
-  if IsCurrentPreset(preset) then
-    Helpers.PrintDebugMsg("skipping the same preset")
-    return
-  end
+    for _,k in pairs(preset) do
+      GameSettings.Set(k.var, k.value)
+    end
 
-  for _,k in pairs(preset) do
-    GameSettings.Set(k.var, k.value)
-  end
-
-  -- DOF should always be enabled for the photomode otherwise it breaks
-  if presetName == "photo" then
-    GameSettings.Set("/graphics/basic/DepthOfField", true)
-  end
-
-  if ConfirmChanges() then
-    Helpers.PrintDebugMsg(tostring(presetName).. " preset has been applied")
-  end
-
-  App.currentPreset = presetName
+    
+    if ConfirmChanges() then
+      Helpers.PrintDebugMsg(tostring(presetName).. " preset has been applied")
+    end
+    
+    App.currentPreset = presetName
+  end)
 end
 
 function GraphicsQuality.GetCurrentPreset()

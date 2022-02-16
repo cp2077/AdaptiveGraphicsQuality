@@ -108,16 +108,18 @@ function TooltipIfHovered(text)
     ImGui.EndTooltip()
   end
 end
-
 ---
 
 local function renderPresetTab(presetName)
 
-  local buttonName = " " .. GetTreeName(presetName) .. " "
+  local isActivePreset = App.currentPreset == presetName
+  local isActiveTab = currPresetTab == presetName
+  local treeName = GetTreeName(presetName)
+  local buttonName = (isActivePreset and "> " or " ") .. (isActivePreset and treeName:upper() or treeName) .. (isActivePreset and " <" or " ")
 
   local colors = {}
   local tooltip = nil
-  if App.currentPreset == presetName then
+  if isActivePreset then
     tooltip = "Active"
   end
   if not Config.inner.enabled[presetName] then
@@ -128,16 +130,16 @@ local function renderPresetTab(presetName)
   if presetName == "menu" then
     tooltip = "[Inventory and Character Creator] " .. (tooltip or "")
   end
-  if App.currentPreset == presetName then
-    if currPresetTab == presetName then
-      table.insert(colors, {ImGuiCol.Button, 0.0, 0.6, 0.2, 0.5})
-    else
-      table.insert(colors, {ImGuiCol.Button, 0.0, 0.6, 0.2, 1.0})
-    end
-    table.insert(colors, {ImGuiCol.ButtonActive, 0.0, 0.6, 0.2, 0.5})
-    table.insert(colors, {ImGuiCol.ButtonHovered, 0.0, 0.6, 0.2, 0.7})
-  end
-  if R.Button(buttonName, { id = buttonName, disabled = currPresetTab == presetName and App.currentPreset ~= presetName, colors = colors, tooltip = tooltip }) then
+  -- if isActivePreset then
+  --   if isActiveTab then
+  --     table.insert(colors, {ImGuiCol.Button, 0.0, 0.6, 0.2, 0.5})
+  --   else
+  --     table.insert(colors, {ImGuiCol.Button, 0.0, 0.6, 0.2, 1.0})
+  --   end
+  --   table.insert(colors, {ImGuiCol.ButtonActive, 0.0, 0.6, 0.2, 0.5})
+  --   table.insert(colors, {ImGuiCol.ButtonHovered, 0.0, 0.6, 0.2, 0.7})
+  -- end
+  if R.Button(buttonName, { id = buttonName, disabled = isActiveTab, colors = colors, tooltip = tooltip }) then
     currPresetTab = presetName
   end
   R.SameLine()
@@ -208,7 +210,7 @@ local function renderPresetTabContent(presetName)
     local function renderInfo()
       if info.repaint then
         R.SameLine()
-        local tooltip = "This option causes the window to be redrawn."
+        local tooltip = "This option causes window redraw."
         R.Button("R", { tooltip = tooltip, small = true,  colors = {
           { ImGuiCol.Button, 0.9, 0.70, 0.45, 0.7  },
           { ImGuiCol.Text, 0.0, 0.0, 0.0,1.0  },
@@ -248,6 +250,12 @@ local function renderPresetTabContent(presetName)
           value = math.max(min, math.min(value, max))
         end
 
+        if varNameDetailed == "DRS_TargetFPS" or varNameDetailed == "DRS_MinimalResolution" or varNameDetailed == "DRS_MaximalResolution" then
+          local min = 5
+          local max = 200
+          value = math.max(min, math.min(value, max))
+        end
+
         if varNameDetailed == "SRS_Resolution" then
           SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/StaticResolutionScaling", true)
           SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
@@ -266,8 +274,21 @@ local function renderPresetTabContent(presetName)
       renderInfo()
       -- R.SameLine()
       if used then
+        if varNameDetailed == "RayTracing" then
+          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/StaticResolutionScaling", false)
+          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
+        end
+
         if varNameDetailed == "StaticResolutionScaling" then
           SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
+          SetPresetSettingsValue(presetName, "/graphics/raytracing/RayTracing", false)
+          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
+        end
+
+        if varNameDetailed == "DynamicResolutionScaling" then
+          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
+          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/StaticResolutionScaling", false)
+          SetPresetSettingsValue(presetName, "/graphics/raytracing/RayTracing", false)
         end
         Config.inner.presets[presetName][i].value = value
         OnConfigChange()
@@ -298,6 +319,7 @@ local function renderPresetTabContent(presetName)
             end
 
             if varNameDetailed == "DLSS" then
+              SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
               SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/StaticResolutionScaling", false)
             end
 
@@ -623,3 +645,4 @@ end
 
 
 return Window
+

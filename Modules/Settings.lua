@@ -27,6 +27,10 @@ local Settings = {
     { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DLSS", kind = "string_list", options = {} },
     { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/StaticResolutionScaling", kind = "bool", options = {} },
     { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/SRS_Resolution", kind = "int", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DynamicResolutionScaling", kind = "bool", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DRS_TargetFPS", kind = "int", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DRS_MinimalResolution", kind = "int", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DRS_MaximalResolution", kind = "int", options = {} },
     { repaint = true, variant = "gameSettings", var = "/video/display/Resolution", kind = "string_list", options = {} },
     { repaint = true, variant = "gameSettings", var = "/video/display/WindowMode", kind = "string_list", options = {} },
     { variant = "gameSettings", var = "/video/display/VSync", kind = "string_list", options = {} },
@@ -47,3 +51,4 @@ local Settings = {
 }
 
 return Settings
+

@@ -1,3 +1,5 @@
+local Cron = require("Modules/Cron")
+local GameSession = require("Modules/GameSession")
 local GraphicsQuality = require("Modules/GraphicsQuality")
 local Config = require("Modules/Config")
 local Vars = require("Modules/Vars")
@@ -6,8 +8,8 @@ local Helpers = require("Modules/Helpers")
 local Tweaks = require("Modules/Tweaks")
 local Window = require("Modules/Window")
 
-App = { ["version"] = "1.1.0" }
-
+App = { ["version"] = "1.2.0" }
+local isLoaded = false
 App.inited = false
 App.isOverlayOpen = false
 App.isEnabled = true
@@ -20,6 +22,25 @@ App.States = {
   isCombat = false,
   isVehicle = false
 }
+
+local API = {}
+
+function API.Enable()
+  App.isEnabled = true
+end
+
+function API.Disable()
+  App.isEnabled = false
+end
+
+function API.DisableAndSetToNormal()
+  App.isEnabled = false
+  GraphicsQuality.SetPreset(Config.inner.presets.normal, "normal")
+end
+
+function API.IsEnabled()
+  return App.isEnabled
+end
 
 function IsCombat()
   return App.States.isCombat
@@ -116,7 +137,7 @@ function SetPresetIfNeeded()
   end
 
   if IsPhotomode() and Config.inner.enabled.photo then
-    GraphicsQuality.SetPreset(Config.inner.presets.photo, "photo")
+    GraphicsQuality.SetPreset(Config.inner.presets.photo, "photo", 0.4)
   elseif IsMenu() and Config.inner.enabled.menu then
     GraphicsQuality.SetPreset(Config.inner.presets.menu, "menu")
   elseif IsCombat() and Config.inner.enabled.combat then
@@ -132,6 +153,15 @@ end
 
 
 function App.new()
+  -- registerForEvent('onTweak', function()
+  --   print(123)
+  --   TweakDB:SetFlat('PreventionSystem.setup.totalEntitiesLimit', 20)
+  --   local lookAtPreset = TweakDB:GetFlat('PhotoModePoses.idle__katana.lookAtPreset')
+  --   TweakDB:SetFlat('PhotoModePoses.idle_squat.lookAtPreset', lookAtPreset)
+  --   print(TweakDB:GetFlat("PhotoModePoses.idle_squat.disableLookAtForGarmentTags")[1])
+  -- end)
+
+
   local deltaAccum = 0
   registerForEvent("onDraw", function(delta)
     if not App.inited or not App.isOverlayOpen then
@@ -145,6 +175,12 @@ function App.new()
 
   registerForEvent("onUpdate", function(delta)
     if not App.inited or not Config.isReady then
+      return
+    end
+
+    Cron.Update(delta)
+
+    if not isLoaded then
       return
     end
 
@@ -198,18 +234,21 @@ function App.new()
   end
 
   function OnPhotomodeEnter()
+    isLoaded = true
     if Config.inner.enabled.photo then
       SetPresetIfNeeded()
     end
   end
 
   function OnPhotomodeExit()
+    isLoaded = true
     if Config.inner.enabled.photo then
       SetPresetIfNeeded()
     end
   end
 
   function OnVehicleEnter()
+    isLoaded = true
     App.States.isVehicle = true
 
     if Config.inner.enabled.vehicle then
@@ -224,6 +263,7 @@ function App.new()
   end
 
   function OnCombatEnter()
+    isLoaded = true
     App.States.isCombat = true
     if Config.inner.enabled.combat then
       SetPresetIfNeeded()
@@ -271,6 +311,26 @@ function App.new()
     assertDefaultPresetsExist()
     initTweaks()
 
+    GameSession.OnStart(function()
+      Helpers.PrintDebugMsg("Game session has been started")
+      isLoaded = true
+    end)
+
+    GameSession.OnEnd(function()
+      Helpers.PrintDebugMsg("Game session has been ended")
+      isLoaded = true
+    end)
+
+    GameSession.OnResume(function()
+      Helpers.PrintDebugMsg("Game has been unpaused")
+      isLoaded = true
+    end)
+
+    GameSession.OnPause(function()
+      Helpers.PrintDebugMsg("Game has been paused")
+      isLoaded = false
+    end)
+
     GameUI.Observe(GameUI.Event.MenuNav, SetPresetIfNeeded)
 
     GameUI.OnPhotoModeOpen(OnPhotomodeEnter)
@@ -284,6 +344,12 @@ function App.new()
 
     GameUI.OnSceneEnter(OnSceneEnter)
     GameUI.OnSceneExit(OnSceneExit)
+
+
+
+    -- Observe('RadialWheelController', 'RegisterBlackboards', function(_, loaded)
+    --   isLoaded = loaded
+    -- end)
 
     Observe('PlayerPuppet', 'OnGameAttached', function(self, b)
       self:RegisterInputListener(self, "OpenInventoryMenu")
@@ -322,7 +388,7 @@ function App.new()
     if Config.inner.disableAutoswitchOnHotkey then
       App.isEnabled = false
     end
-    GraphicsQuality.SetPreset(Config.inner.presets.photo, "photo")
+    GraphicsQuality.SetPreset(Config.inner.presets.photo, "photo", 0.3)
   end)
   registerHotkey("agq_toggle_force_menu", 'Force "Menu" preset', function()
     if Config.inner.disableAutoswitchOnHotkey then
@@ -349,7 +415,10 @@ function App.new()
     GraphicsQuality.SetPreset(Config.inner.presets.scene, "scene")
   end)
 
-  return { version = App.version }
+  return {
+    version = App.version,
+    api = API
+  }
 end
 
 return App.new()

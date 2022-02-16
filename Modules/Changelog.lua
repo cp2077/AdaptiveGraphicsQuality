@@ -1,5 +1,23 @@
 local Changelog = {
   {
+    version = "1.2.0",
+    changes = {
+      ' - Potential stability improvements',
+      ' - Simple API for modders:',
+      '   * GetMod("AdaptiveGraphicsQuality").api.IsEnabled()',
+      '   * GetMod("AdaptiveGraphicsQuality").api.Enable()',
+      '   * GetMod("AdaptiveGraphicsQuality").api.Disable()',
+      '   * GetMod("AdaptiveGraphicsQuality").api.DisableAndSetToNormal()',
+    }
+  },
+  {
+    version = "1.1.1",
+    changes = {
+      'Fix: Remove forgotten logger',
+      'Fix: One of the options (Auto switch on hotkey) not working properly'
+    }
+  },
+  {
     version = "1.1.0",
     changes = {
       'Feature: "Menu" preset is now "Inventory/Character Creation" preset. It will only be active in the inventory and character creation menu. This is mainly useful for DLSS.',

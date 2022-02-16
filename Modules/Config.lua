@@ -52,8 +52,11 @@ function Config.SaveConfig()
 end
 
 function Migrate()
-  local defaultSettings = GraphicsQuality.GetCurrentPreset()
+  if Config.inner.disableAutoswitchOnHotkey == nil then
+    Config.inner.disableAutoswitchOnHotkey = false
+  end
 
+  local defaultSettings = GraphicsQuality.GetCurrentPreset()
   for _, currSetting in pairs(Settings.list) do
     for _, currPreset in pairs(Config.inner.presets) do
       if currPreset == 0 then
