@@ -203,143 +203,173 @@ local function renderPresetTabContent(presetName)
   R.NewLine(1)
 
   for i, setting in pairs(getCachedSettingsSearch(presetName)) do
-    local varNameBase, varNameDetailed = GetVarName(setting.var)
+    -- this breaks photomode
+    if setting.var ~= "/graphics/advanced/DistantShadowsResolution_________TESTIT" then
+      local varNameBase, varNameDetailed = GetVarName(setting.var)
 
-    local info = getSettingsInfo(setting.var)
+      local info = getSettingsInfo(setting.var)
+      -- if info == nil then
+      --   print(setting.var)
+      -- end
 
-    local function renderInfo()
-      if info.repaint then
-        R.SameLine()
-        local tooltip = "This option causes window redraw."
-        R.Button("R", { tooltip = tooltip, small = true,  colors = {
-          { ImGuiCol.Button, 0.9, 0.70, 0.45, 0.7  },
-          { ImGuiCol.Text, 0.0, 0.0, 0.0,1.0  },
-          { ImGuiCol.ButtonActive, 0.9, 0.70, 0.45, 0.7 },
-          { ImGuiCol.ButtonHovered, 0.9, 0.70, 0.45, 0.7  },
-        }  })
+      local function renderInfo()
+        if info.repaint then
+          R.SameLine()
+          local tooltip = "This option causes window redraw."
+          R.Button("R", { tooltip = tooltip, small = true,  colors = {
+            { ImGuiCol.Button, 0.9, 0.70, 0.45, 0.7  },
+            { ImGuiCol.Text, 0.0, 0.0, 0.0,1.0  },
+            { ImGuiCol.ButtonActive, 0.9, 0.70, 0.45, 0.7 },
+            { ImGuiCol.ButtonHovered, 0.9, 0.70, 0.45, 0.7  },
+          }  })
+        end
       end
-    end
-    local mainTextColors = {}
+      local mainTextColors = {}
 
-    if not Config.inner.enabled[presetName] then
-      mainTextColors = {{ ImGuiCol.Text, 1,1,1, 0.45 }}
-    elseif info.repaint then
-      mainTextColors = {{ ImGuiCol.Text, 0.9, 0.70, 0.45, 1 }}
-    end
+      if not info then
+        print(setting.var)
+      end
 
-    if setting.kind ~= "bool" then
-      R.Text(firstToUpper(varNameDetailed), { colors = mainTextColors })
-      renderInfo()
-    end
+      if not Config.inner.enabled[presetName] then
+        mainTextColors = {{ ImGuiCol.Text, 1,1,1, 0.45 }}
+      elseif info.repaint then
+        mainTextColors = {{ ImGuiCol.Text, 0.9, 0.70, 0.45, 1 }}
+      end
 
-    local current, options = GetSettingsOptions(setting)
+      if setting.kind ~= "bool" then
+        R.Text(firstToUpper(varNameDetailed), { colors = mainTextColors })
+        renderInfo()
+      end
 
-    if setting.kind == "int" then
-      local settingsValue = (type(Config.inner.presets[presetName][i].value) == "number") and Config.inner.presets[presetName][i].value or 100
-      local itemID = presetName .. tostring(i) .. tostring(settingsValue)
-      local value
-      local used
-      R.ItemWidth(150, function()
-        value, used = R.InputInt("", settingsValue, { id = itemID, step = 5, stepFast = 10 })
-      end)
+      local current, options = GetSettingsOptions(setting)
 
-      if used then
-        if varNameDetailed == "SRS_Resolution" then
-          local min = 25
-          local max = 200
-          value = math.max(min, math.min(value, max))
+      if setting.kind == "int" then
+        local settingsValue = (type(Config.inner.presets[presetName][i].value) == "number") and Config.inner.presets[presetName][i].value or 100
+        local itemID = presetName .. tostring(i) .. tostring(settingsValue)
+        local value
+        local used
+        R.ItemWidth(150, function()
+          value, used = R.InputInt("", settingsValue, { id = itemID, step = 5, stepFast = 10 })
+        end)
+
+        if used then
+          if varNameDetailed == "DRS_TargetFPS" or varNameDetailed == "DRS_MinimalResolution" or varNameDetailed == "DRS_MaximalResolution" then
+            local min = 5
+            local max = 200
+            value = math.max(min, math.min(value, max))
+          end
+
+          if isOverride then
+            GraphicsQuality.SetSettings(setting.var, value)
+          else
+            Config.inner.presets[presetName][i].value = value
+            OnConfigChange()
+          end
         end
+      elseif setting.kind == "bool" then
+        local isActiveOption = Config.inner.presets[presetName][i].value
+        local value, used = R.CheckBox(firstToUpper(varNameDetailed), isActiveOption, { colors = mainTextColors })
+        renderInfo()
 
-        if varNameDetailed == "DRS_TargetFPS" or varNameDetailed == "DRS_MinimalResolution" or varNameDetailed == "DRS_MaximalResolution" then
-          local min = 5
-          local max = 200
-          value = math.max(min, math.min(value, max))
+        if setting.var == "/graphics/basic/DepthOfField" and currPresetTab == "photo" then
+          R.SameLine()
+          R.Button(
+            "?",
+            {
+              tooltip = "If set to false, Depth Of Field option will be disabled and removed from PhotoMode menu entirely. (Changing to true requires photomode restart)",
+              small = true,
+              colors = {
+                { ImGuiCol.Button, unpack(R.Colors.Yellow) },
+                { ImGuiCol.ButtonActive, unpack(R.Colors.Yellow) },
+                { ImGuiCol.ButtonHovered, unpack(R.Colors.Yellow) },
+              }
+            }
+          )
         end
+        if used then
+          -- if varNameDetailed == "RayTracing" then
+          --   SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
+          -- end
 
-        if varNameDetailed == "SRS_Resolution" then
-          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/StaticResolutionScaling", true)
-          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
-        end
+          if varNameDetailed == "DynamicResolutionScaling" then
+            SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
+            SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR", "Off")
+            SetPresetSettingsValue(presetName, "/graphics/raytracing/RayTracing", false)
+          end
 
-        if isOverride then
-          GraphicsQuality.SetSettings(setting.var, value)
-        else
           Config.inner.presets[presetName][i].value = value
           OnConfigChange()
         end
-      end
-    elseif setting.kind == "bool" then
-      local isActiveOption = Config.inner.presets[presetName][i].value
-      local value, used = R.CheckBox(firstToUpper(varNameDetailed), isActiveOption, { colors = mainTextColors })
-      renderInfo()
-      -- R.SameLine()
-      if used then
-        if varNameDetailed == "RayTracing" then
-          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/StaticResolutionScaling", false)
-          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
-        end
-
-        if varNameDetailed == "StaticResolutionScaling" then
-          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
-          SetPresetSettingsValue(presetName, "/graphics/raytracing/RayTracing", false)
-          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
-        end
-
-        if varNameDetailed == "DynamicResolutionScaling" then
-          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
-          SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/StaticResolutionScaling", false)
-          SetPresetSettingsValue(presetName, "/graphics/raytracing/RayTracing", false)
-        end
-        Config.inner.presets[presetName][i].value = value
-        OnConfigChange()
-      end
-    else
-      if #options > 6 then
-        for iOpt, kOpt in pairs(options) do
-          if Config.inner.presets[presetName][i].value == kOpt then
-            local item
-            local clicked
-            R.ItemWidth(150, function()
-              item, clicked = R.ComboItem("", iOpt-1, options, #options)
-            end)
-            if clicked then
-              Config.inner.presets[presetName][i].value = options[item+1]
-              OnConfigChange()
-            end
-          end
-        end
       else
-        for iOpt, kOpt in pairs(options) do
-          local isActiveOption = Config.inner.presets[presetName][i].value == kOpt
-          local buttonText = tostring(kOpt)
-          local buttonID = presetName .. tostring(i) .. tostring(kOpt) .. "switch"
-          if R.Button(buttonText, { disabled = isActiveOption, id = buttonID  }) and not isActiveOption then
-            if varNameDetailed == "StaticResolutionScaling" then
-              SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
-            end
-
-            if varNameDetailed == "DLSS" then
-              SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
-              SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/StaticResolutionScaling", false)
-            end
-
-            if isOverride then
-              GraphicsQuality.SetSettings(setting.var, kOpt)
-            else
-              Config.inner.presets[presetName][i].value = kOpt
-              OnConfigChange()
+        if #options > 7 then
+          for iOpt, kOpt in pairs(options) do
+            if Config.inner.presets[presetName][i].value == kOpt then
+              local item
+              local clicked
+              R.ItemWidth(150, function()
+                item, clicked = R.ComboItem("", iOpt-1, options, #options)
+              end)
+              if clicked then
+                Config.inner.presets[presetName][i].value = options[item+1]
+                OnConfigChange()
+              end
             end
           end
+        else
+          for iOpt, kOpt in pairs(options) do
+            local isActiveOption = Config.inner.presets[presetName][i].value == kOpt
+            local buttonText = tostring(kOpt)
+            local buttonID = presetName .. tostring(i) .. tostring(kOpt) .. "switch"
+            if R.Button(buttonText, { disabled = isActiveOption, id = buttonID  }) and not isActiveOption then
+              if varNameDetailed == "DLSS" then
+                SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
+                OnConfigChange()
+                SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR", "Off")
+                OnConfigChange()
+              end
+              if varNameDetailed == "FSR" then
+                SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
+                OnConfigChange()
+                SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
+                OnConfigChange()
+              end
 
-          R.SameLine()
-          if iOpt == #options then
-            R.NewLine()
+              if isOverride then
+                GraphicsQuality.SetSettings(setting.var, kOpt)
+              else
+                Cron.NextTick(function()
+                  Config.inner.presets[presetName][i].value = kOpt
+                  OnConfigChange()
+                end)
+              end
+            end
+            R.SameLine()
+            if iOpt == #options then
+              R.NewLine()
+            end
+          end
+          -- if varNameDetailed == "DLSS" or varNameDetailed == "FSR" or varNameDetailed == "Resolution" then
+          --   R.SameLine()
+          --   R.Button("?", { tooltip = 'This option is disabled for now due to a game bug.', small = true,  colors = {
+          --     { ImGuiCol.Button, unpack(R.Colors.Red) },
+          --     { ImGuiCol.ButtonActive, unpack(R.Colors.Red) },
+          --     { ImGuiCol.ButtonHovered, unpack(R.Colors.Red) },
+          --   }})
+          -- end
+
+          if setting.var == "/graphics/advanced/DistantShadowsResolution" and currPresetTab == "photo" then
+            R.SameLine()
+            R.Button("?", { tooltip = 'In order to work properly,\nthis option has to be kept in sync with previously used preset', small = true,  colors = {
+              { ImGuiCol.Button, unpack(R.Colors.Yellow) },
+              { ImGuiCol.ButtonActive, unpack(R.Colors.Yellow) },
+              { ImGuiCol.ButtonHovered, unpack(R.Colors.Yellow) },
+            }})
           end
         end
       end
+      ImGui.Dummy(0, 6)
+      -- R.NewLine(1)
     end
-    ImGui.Dummy(0, 6)
-    -- R.NewLine(1)
   end
   R.NewLine(3)
 end

@@ -1,12 +1,11 @@
 local Helpers = require("Modules/Helpers")
 local Settings = require("Modules/Settings")
-local GraphicsQuality = require("Modules/GraphicsQuality")
-local Vars = require("Modules/Vars")
+GameSettings = require("Modules/GameSettings")
 
 local Config = {
   inner = {
-    isStealthACombat = true,
-    isRestrictedAreaACombat = true,
+    isStealthACombat = false,
+    isRestrictedAreaACombat = false,
     isDangerousAreaACombat = true,
     isDebug = false,
     switchToNormalWhenDisabled = false,
@@ -51,14 +50,46 @@ function Config.SaveConfig()
   WriteConfig()
 end
 
+function Config.Migrate()
+  return Migrate()
+end
+
 function Migrate()
   if Config.inner.disableAutoswitchOnHotkey == nil then
     Config.inner.disableAutoswitchOnHotkey = false
   end
 
+  for presetName, currPreset in pairs(Config.inner.presets) do
+    local rm = {}
+    if Config.inner.presets[presetName] == 0 then
+      break
+    end
+    for i, currPresetSetting in pairs(Config.inner.presets[presetName]) do
+      -- if "var" already exists in the config, skip it.
+      if not GameSettings.Has(currPresetSetting.var)
+          or currPresetSetting.var == "/graphics/dynamicresolution/StaticResolutionScaling"
+          or currPresetSetting.var == "/graphics/dynamicresolution/DynamicResolutionScaling"
+          or currPresetSetting.var == "/graphics/dynamicresolution/DRS_TargetFPS"
+          or currPresetSetting.var == "/graphics/dynamicresolution/DRS_MinimalResolution"
+          or currPresetSetting.var == "/graphics/dynamicresolution/DRS_MaximalResolution" then
+        rm[i] = true
+      end
+    end
+
+    for i=#Config.inner.presets[presetName],1,-1 do
+      if rm[i] then
+        table.remove(Config.inner.presets[presetName], i)
+      end
+    end
+
+    -- for _, id in pairs(rm) do
+    --   table.remove(Config.inner.presets[presetName], id)
+    -- end
+  end
+
   local defaultSettings = GraphicsQuality.GetCurrentPreset()
   for _, currSetting in pairs(Settings.list) do
-    for _, currPreset in pairs(Config.inner.presets) do
+    for presetName, currPreset in pairs(Config.inner.presets) do
       if currPreset == 0 then
         break
       end
@@ -93,6 +124,101 @@ function Migrate()
       end
 
     end
+  end
+
+  -- sort presets
+  for presetName, currPreset in pairs(Config.inner.presets) do
+    if Config.inner.presets[presetName] == 0 then
+      break
+    end
+    table.sort(Config.inner.presets[presetName], function (a, b)
+      aDisplay = string.find(a.var, "display")
+      bDisplay = string.find(b.var, "display")
+
+      aDynamicres = string.find(a.var, "dynamicresolution")
+      bDynamicres = string.find(b.var, "dynamicresolution")
+
+      araytracing = string.find(a.var, "raytracing")
+      braytracing = string.find(b.var, "raytracing")
+
+      aperformance = string.find(a.var, "performance")
+      bperformance = string.find(b.var, "performance")
+
+      abasic = string.find(a.var, "basic")
+      bbasic = string.find(b.var, "basic")
+
+      if aDisplay or bDisplay then
+        if aDisplay ~= bDisplay then
+          return aDisplay and not bDisplay
+        else
+          if string.find(a.var, "VSync") then
+            return false
+          end
+          if string.find(b.var, "VSync") then
+            return true
+          end
+          if string.find(a.var, "FPS") then
+            return false
+          end
+          if string.find(b.var, "FPS") then
+            return true
+          end
+        end
+      end
+
+      if aDynamicres or bDynamicres then
+        if aDynamicres ~= bDynamicres then
+          return aDynamicres and not bDynamicres
+        end
+      end
+
+      adlss = string.find(a.var, "DLSS")
+      bdlss = string.find(b.var, "DLSS")
+
+      afsr = string.find(a.var, "FSR")
+      bfsr = string.find(b.var, "FSR")
+
+      adrs = string.find(a.var, "DynamicResolutionScaling")
+      bdrs = string.find(b.var, "DynamicResolutionScaling")
+
+      if adlss or bdlss then
+        if adlss ~= bdlss then
+          return adlss and not bdlss
+        end
+      end
+
+      if afsr or bfsr then
+        if afsr ~= bfsr then
+          return afsr and not bfsr
+        end
+      end
+
+      if adrs or bdrs then
+        if adrs ~= bdrs then
+          return adrs and not bdrs
+        end
+      end
+
+      if araytracing or braytracing then
+        if araytracing ~= braytracing then
+          return araytracing and not braytracing
+        end
+      end
+
+      if aperformance or bperformance then
+        if aperformance ~= bperformance then
+          return not aperformance and bperformance
+        end
+      end
+
+      -- if abasic or bbasic then
+      --   if abasic ~= bbasic then
+      --     return abasic and bbasic
+      --   end
+      -- end
+
+      return a.var < b.var
+    end)
   end
 
   -- ...

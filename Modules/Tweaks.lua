@@ -2,8 +2,8 @@ local Tweaks = {
   list = {
     { variant = "gameOptions", group = "Graphics", var = "Developer/FeatureToggles",
       note = "Turning it off also turns off the lens flare effect", key = "Bloom", kind = "bool", default = true },
-    { variant = "gameOptions", group = "Graphics", var = "Developer/FeatureToggles",
-      note = "Turning it off may cause performance degradation", key = "Antialiasing", kind = "bool", default = true },
+    -- { variant = "gameOptions", group = "Graphics", var = "Developer/FeatureToggles",
+    --   note = "Turning it off may cause performance degradation", key = "Antialiasing", kind = "bool", default = true },
     -- i'm not sure what it does exactly
     -- { variant = "gameOptions", group = "Graphics", var = "Developer/FeatureToggles", alt_name = "ContrastAdaptiveSharpening", key = "ConstrastAdaptiveSharpening", kind = "bool", default = true },
 

@@ -16,7 +16,10 @@ end)
 ```
 ]]
 
-local GameUI = { version = '1.1.5' }
+local GameUI = {
+	version = '1.2.0',
+	framework = '1.19.0'
+}
 
 GameUI.Event = {
 	Braindance = 'Braindance',
@@ -540,18 +543,15 @@ local function initialize(event)
 	-- Loading State Listeners
 
 	if required[GameUI.Event.Loading] and not initialized[GameUI.Event.Loading] then
-		Observe('LoadingScreenProgressBarController', 'OnInitialize', function()
-			--spdlog.error(('LoadingScreenProgressBarController::OnInitialize()'))
-
-			updateMenuScenario()
-			updateLoading(true)
-			notifyObservers()
-		end)
-
 		Observe('LoadingScreenProgressBarController', 'SetProgress', function(_, progress)
 			--spdlog.info(('LoadingScreenProgressBarController::SetProgress(%.3f)'):format(progress))
 
-			if progress == 1.0 then
+			if not isLoading then
+				updateMenuScenario()
+				updateLoading(true)
+				notifyObservers()
+
+			elseif progress == 1.0 then
 				if currentMenu ~= 'MainMenu' then
 					updateMenuScenario()
 				end
@@ -674,8 +674,8 @@ local function initialize(event)
 			end)
 		end
 
-		Observe('SingleplayerMenuGameController', 'OnSavesReady', function()
-			--spdlog.error(('SingleplayerMenuGameController::OnSavesReady()'))
+		Observe('SingleplayerMenuGameController', 'OnSavesForLoadReady', function()
+			--spdlog.error(('SingleplayerMenuGameController::OnSavesForLoadReady()'))
 
 			updateMenuScenario('MenuScenario_SingleplayerMenu')
 
@@ -791,12 +791,12 @@ local function initialize(event)
 	if required[GameUI.Event.FastTravel] and not initialized[GameUI.Event.FastTravel] then
 		local fastTravelStart
 
-		Observe('FastTravelSystem', 'OnToggleFastTravelAvailabilityOnMapRequest', function(_, request)
+		Observe('FastTravelSystem', 'OnUpdateFastTravelPointRecordRequest', function(_, request)
 			if type(request) ~= 'userdata' then
 				request = _
 			end
 
-			--spdlog.error(('FastTravelSystem::OnToggleFastTravelAvailabilityOnMapRequest()'))
+			--spdlog.error(('FastTravelSystem::OnUpdateFastTravelPointRecordRequest()'))
 
 			if request.isEnabled then
 				fastTravelStart = request.pointRecord
@@ -953,38 +953,34 @@ local function initialize(event)
 		initialized[GameUI.Event.Johnny] = true
 	end
 
-	-- Johnny
+	-- Cyberspace
 
 	if required[GameUI.Event.Cyberspace] and not initialized[GameUI.Event.Cyberspace] then
 		Observe('PlayerPuppet', 'OnStatusEffectApplied', function(_, evt)
-			if type(evt) ~= 'userdata' then
-				evt = _
-			end
-
 			--spdlog.error(('PlayerPuppet::OnStatusEffectApplied()'))
 
-			local applyCyberspacePresence = evt.staticData:GameplayTagsContains('CyberspacePresence')
+			if evt.staticData then
+				local applyCyberspacePresence = evt.staticData:GameplayTagsContains('CyberspacePresence')
 
-			if applyCyberspacePresence then
-				notifyAfterStart(function()
-					updateCyberspace(true)
-				end)
+				if applyCyberspacePresence then
+					notifyAfterStart(function()
+						updateCyberspace(true)
+					end)
+				end
 			end
 		end)
 
 		Observe('PlayerPuppet', 'OnStatusEffectRemoved', function(_, evt)
-			if type(evt) ~= 'userdata' then
-				evt = _
-			end
-
 			--spdlog.error(('PlayerPuppet::OnStatusEffectRemoved()'))
 
-			local removeCyberspacePresence = evt.staticData:GameplayTagsContains('CyberspacePresence')
+			if evt.staticData then
+				local removeCyberspacePresence = evt.staticData:GameplayTagsContains('CyberspacePresence')
 
-			if removeCyberspacePresence then
-				notifyAfterStart(function()
-					updateCyberspace(false)
-				end)
+				if removeCyberspacePresence then
+					notifyAfterStart(function()
+						updateCyberspace(false)
+					end)
+				end
 			end
 		end)
 

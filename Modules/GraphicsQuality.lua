@@ -6,11 +6,9 @@ local Helpers = require("Modules/Helpers")
 local Cron = require("Modules/Cron")
 
 function ConfirmChanges()
-  if GameSettings.NeedsConfirmation() or GameSettings.NeedsReload() or GameSettings.NeedsRestart() then
-    GameSettings.Confirm()
-    GetSingleton("inkMenuScenario"):GetSystemRequestsHandler():RequestSaveUserSettings()
-    return true
-  end
+  GameSettings.Confirm()
+  GameSettings.Save()
+  return true
 end
 
 function GraphicsQuality.SetSettings(var, val)
@@ -24,20 +22,47 @@ function GraphicsQuality.SetPreset(preset, presetName, delay)
   end
 
   Cron.After(delay, function()
+    if preset == 0 then
+      return Helpers.PrintMsg("Couldn't set preset since it doesn't exist. Was it initialized properly?")
+    end
+
+    if presetName == "photo" then
+      for _ ,presetSettings in pairs(preset) do
+        -- -- DOF should always be enabled for the photomode otherwise it breaks
+        -- if presetSettings.var == "/graphics/basic/DepthOfField" then
+        --   presetSettings.value = true
+        -- end
+
+        if presetSettings.var == "/graphics/advanced/DistantShadowsResolution" then
+          presetSettings.value = GameSettings.Get("/graphics/advanced/DistantShadowsResolution")
+        end
+      end
+    end
+
     if IsCurrentPreset(preset) then
       Helpers.PrintDebugMsg("skipping the same preset")
       return
     end
 
+
     for _,k in pairs(preset) do
+      -- if k.var ~=  "/graphics/dynamicresolution/DLSS"
+      --    and k.var ~=  "/graphics/dynamicresolution/FSR"
+      --    and k.var ~=  "/graphics/dynamicresolution/DynamicResolutionScaling"
+      --    and k.var ~=  "/video/display/Resolution" then
       GameSettings.Set(k.var, k.value)
+      -- end
     end
 
-    
+    -- -- DOF should always be enabled for the photomode otherwise it breaks
+    -- if presetName == "photo" then
+    --   GameSettings.Set("/graphics/basic/DepthOfField", true)
+    -- end
+
     if ConfirmChanges() then
       Helpers.PrintDebugMsg(tostring(presetName).. " preset has been applied")
     end
-    
+
     App.currentPreset = presetName
   end)
 end

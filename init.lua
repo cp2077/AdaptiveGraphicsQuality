@@ -1,19 +1,21 @@
-local Cron = require("Modules/Cron")
+Cron = require("Modules/Cron")
 local GameSession = require("Modules/GameSession")
-local GraphicsQuality = require("Modules/GraphicsQuality")
-local Config = require("Modules/Config")
-local Vars = require("Modules/Vars")
+Vars = require("Modules/Vars")
+GraphicsQuality = require("Modules/GraphicsQuality")
+Config = require("Modules/Config")
 local GameUI = require("Modules/GameUI")
-local Helpers = require("Modules/Helpers")
-local Tweaks = require("Modules/Tweaks")
+Helpers = require("Modules/Helpers")
+Tweaks = require("Modules/Tweaks")
 local Window = require("Modules/Window")
 
-App = { ["version"] = "1.2.0" }
+App = { ["version"] = "1.3.0" }
 local isLoaded = false
 App.inited = false
 App.isOverlayOpen = false
 App.isEnabled = true
 App.currentPreset = "normal"
+
+App.menuState = nil
 
 Errors = {
   SETTINGS_APPLY = false,
@@ -80,11 +82,21 @@ end
 local function assertDefaultPresetsExist()
   local defaultPreset = GraphicsQuality.GetCurrentPreset()
   local changed = false
-  for i,k in pairs(Config.inner.presets) do
-    if k == 0 then
+  for presetName, value in pairs(Config.inner.presets) do
+    if value == 0 then
       changed = true
       -- clone the list
-      Config.inner.presets[i] = json.decode(json.encode(defaultPreset))
+      Config.inner.presets[presetName] = json.decode(json.encode(defaultPreset))
+
+      -- Default photomode's DOF option to true in order to not break it.
+      if presetName == "photo" then
+        for _, presetSettings in pairs(Config.inner.presets[presetName]) do
+          if presetSettings.var == "/graphics/basic/DepthOfField" then
+            presetSettings.value = true
+            break
+          end
+        end
+      end
     end
   end
 
@@ -309,6 +321,10 @@ function App.new()
   registerForEvent("onInit", function ()
     Config.InitConfig()
     assertDefaultPresetsExist()
+
+    -- temp sorting fix
+    Config.InitConfig()
+
     initTweaks()
 
     GameSession.OnStart(function()
@@ -318,7 +334,7 @@ function App.new()
 
     GameSession.OnEnd(function()
       Helpers.PrintDebugMsg("Game session has been ended")
-      isLoaded = true
+      isLoaded = false
     end)
 
     GameSession.OnResume(function()
@@ -344,7 +360,6 @@ function App.new()
 
     GameUI.OnSceneEnter(OnSceneEnter)
     GameUI.OnSceneExit(OnSceneExit)
-
 
 
     -- Observe('RadialWheelController', 'RegisterBlackboards', function(_, loaded)
@@ -417,7 +432,8 @@ function App.new()
 
   return {
     version = App.version,
-    api = API
+    api = API,
+    GameSettings = GameSettings,
   }
 end
 
