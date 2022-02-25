@@ -1,10 +1,17 @@
 local Changelog = {
   {
+    version = "1.3.1",
+    changes = {
+      ' - Possible workaround for the issue resulting in crashes for some people',
+    }
+  },
+  {
     version = "1.3.0",
     changes = {
       ' - v1.5 support',
       ' - New option: AMD FSR',
-      ' - Proper settings sorting'
+      ' - Proper settings sorting',
+      ' - Worked around an issue with DistantShadowsResolution',
     }
   },
   {

@@ -6,8 +6,19 @@ local Helpers = require("Modules/Helpers")
 local Cron = require("Modules/Cron")
 
 function ConfirmChanges()
-  GameSettings.Confirm()
-  GameSettings.Save()
+  Cron.Every(0.1, function (timer)
+    if App.isOverlayOpen then
+      App.shouldCloseOverlay = true
+    else
+      App.shouldCloseOverlay = false
+      timer:Halt()
+      Cron.NextTick(function()
+        GameSettings.Confirm()
+        GameSettings.Save()
+      end)
+    end
+  end)
+
   return true
 end
 
@@ -59,9 +70,10 @@ function GraphicsQuality.SetPreset(preset, presetName, delay)
     --   GameSettings.Set("/graphics/basic/DepthOfField", true)
     -- end
 
-    if ConfirmChanges() then
-      Helpers.PrintDebugMsg(tostring(presetName).. " preset has been applied")
-    end
+    ConfirmChanges()
+    -- if ConfirmChanges() then
+    --   Helpers.PrintDebugMsg(tostring(presetName).. " preset has been applied")
+    -- end
 
     App.currentPreset = presetName
   end)

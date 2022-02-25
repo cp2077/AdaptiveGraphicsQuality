@@ -139,10 +139,14 @@ local function renderPresetTab(presetName)
   --   table.insert(colors, {ImGuiCol.ButtonActive, 0.0, 0.6, 0.2, 0.5})
   --   table.insert(colors, {ImGuiCol.ButtonHovered, 0.0, 0.6, 0.2, 0.7})
   -- end
+  
   if R.Button(buttonName, { id = buttonName, disabled = isActiveTab, colors = colors, tooltip = tooltip }) then
     currPresetTab = presetName
   end
   R.SameLine()
+
+
+  
 end
 
 local function SetPresetSettingsValue(presetName, var, value)
@@ -323,24 +327,18 @@ local function renderPresetTabContent(presetName)
             if R.Button(buttonText, { disabled = isActiveOption, id = buttonID  }) and not isActiveOption then
               if varNameDetailed == "DLSS" then
                 SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
-                OnConfigChange()
                 SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR", "Off")
-                OnConfigChange()
               end
               if varNameDetailed == "FSR" then
                 SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
-                OnConfigChange()
                 SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
-                OnConfigChange()
               end
 
               if isOverride then
                 GraphicsQuality.SetSettings(setting.var, kOpt)
               else
-                Cron.NextTick(function()
-                  Config.inner.presets[presetName][i].value = kOpt
-                  OnConfigChange()
-                end)
+                Config.inner.presets[presetName][i].value = kOpt
+                OnConfigChange()
               end
             end
             R.SameLine()
@@ -391,11 +389,13 @@ local function renderPresetsTabs()
     renderPresetTab(presetName)
   end
   R.NewLine()
+
   R.Separator()
   R.NewLine(1)
 
   --COPY PASTE CONTROLS
   renderCopyPasteMenu()
+
   R.SameLine()
 
   if currPresetTab ~= "normal" and currPresetTab ~= "override" then
@@ -638,10 +638,11 @@ function Window.Draw(isConfigReady)
     { ImGuiCol.Separator, 0.25, 0.35, 0.45, 0.8 },
   }
 
+  local winHeight = App.shouldCloseOverlay and 450 or 500
   local mainWindowVars = {
     { ImGuiStyleVar.WindowRounding, 7.0 },
     { ImGuiStyleVar.ScrollbarSize, 4 },
-    { ImGuiStyleVar.WindowMinSize, 480, 500 },
+    { ImGuiStyleVar.WindowMinSize, 480, winHeight },
   }
 
   local function onConfigNotReady()
@@ -666,10 +667,16 @@ function Window.Draw(isConfigReady)
         R.NewLine()
       end
       onRenderTabs()
+        
+      if App.shouldCloseOverlay then
+        R.NewLine(1)
+        R.Text("Close CET overlay to apply changes", { colors = {{ ImGuiCol.Text, unpack(R.Colors.Red) }} })
+      end
     end
   end
 
   R.Window("Adaptive Graphics Quality", renderMainWindow, { colors = mainWindowColors, vars = mainWindowVars })
+
   R.Asserts()
 end
 

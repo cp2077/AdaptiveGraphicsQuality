@@ -8,12 +8,13 @@ Helpers = require("Modules/Helpers")
 Tweaks = require("Modules/Tweaks")
 local Window = require("Modules/Window")
 
-App = { ["version"] = "1.3.0" }
+App = { ["version"] = "1.3.1" }
 local isLoaded = false
 App.inited = false
 App.isOverlayOpen = false
 App.isEnabled = true
 App.currentPreset = "normal"
+App.shouldCloseOverlay = false
 
 App.menuState = nil
 
