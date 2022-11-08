@@ -27,7 +27,7 @@ local Settings = {
     { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DLSS", kind = "string_list", options = {} },
 
     -- AMD FSR HERE
-    { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/FSR", kind = "string_list", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/FSR2", kind = "string_list", options = {} },
 
     -- { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DynamicResolutionScaling", kind = "bool", options = {} },
     -- { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DRS_TargetFPS", kind = "int", options = {} },

@@ -1,5 +1,11 @@
 local Changelog = {
   {
+    version = "1.3.2",
+    changes = {
+      ' - Fix for 1.61'
+    }
+  },
+  {
     version = "1.3.1",
     changes = {
       ' - Possible workaround for the issue resulting in crashes for some people',

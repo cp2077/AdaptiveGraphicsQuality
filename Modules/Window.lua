@@ -297,7 +297,7 @@ local function renderPresetTabContent(presetName)
 
           if varNameDetailed == "DynamicResolutionScaling" then
             SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
-            SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR", "Off")
+            SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR2", "Off")
             SetPresetSettingsValue(presetName, "/graphics/raytracing/RayTracing", false)
           end
 
@@ -327,9 +327,9 @@ local function renderPresetTabContent(presetName)
             if R.Button(buttonText, { disabled = isActiveOption, id = buttonID  }) and not isActiveOption then
               if varNameDetailed == "DLSS" then
                 SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
-                SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR", "Off")
+                SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR2", "Off")
               end
-              if varNameDetailed == "FSR" then
+              if varNameDetailed == "FSR2" then
                 SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
                 SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
               end

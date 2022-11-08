@@ -175,8 +175,8 @@ function Migrate()
       adlss = string.find(a.var, "DLSS")
       bdlss = string.find(b.var, "DLSS")
 
-      afsr = string.find(a.var, "FSR")
-      bfsr = string.find(b.var, "FSR")
+      afsr = string.find(a.var, "FSR2")
+      bfsr = string.find(b.var, "FSR2")
 
       adrs = string.find(a.var, "DynamicResolutionScaling")
       bdrs = string.find(b.var, "DynamicResolutionScaling")
