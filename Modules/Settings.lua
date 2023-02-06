@@ -24,7 +24,7 @@ local Settings = {
     { variant = "gameSettings", var = "/gameplay/performance/CrowdDensity", kind = "name_list", options = {} },
 
     -- Resolution
-    { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DLSS", kind = "string_list", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/dlss/DLSS", kind = "string_list", options = {} },
 
     -- AMD FSR HERE
     { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/FSR2", kind = "string_list", options = {} },

@@ -57,7 +57,7 @@ function GraphicsQuality.SetPreset(preset, presetName, delay)
 
 
     for _,k in pairs(preset) do
-      -- if k.var ~=  "/graphics/dynamicresolution/DLSS"
+      -- if k.var ~=  "/graphics/dlss/DLSS"
       --    and k.var ~=  "/graphics/dynamicresolution/FSR"
       --    and k.var ~=  "/graphics/dynamicresolution/DynamicResolutionScaling"
       --    and k.var ~=  "/video/display/Resolution" then

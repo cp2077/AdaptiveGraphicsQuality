@@ -296,7 +296,7 @@ local function renderPresetTabContent(presetName)
           -- end
 
           if varNameDetailed == "DynamicResolutionScaling" then
-            SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
+            SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS", "Off")
             SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR2", "Off")
             SetPresetSettingsValue(presetName, "/graphics/raytracing/RayTracing", false)
           end
@@ -330,7 +330,7 @@ local function renderPresetTabContent(presetName)
                 SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR2", "Off")
               end
               if varNameDetailed == "FSR2" then
-                SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DLSS", "Off")
+                SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS", "Off")
                 SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
               end
 
