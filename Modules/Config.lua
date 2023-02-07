@@ -135,8 +135,8 @@ function Migrate()
       aDisplay = string.find(a.var, "display")
       bDisplay = string.find(b.var, "display")
 
-      aDynamicres = string.find(a.var, "dynamicresolution")
-      bDynamicres = string.find(b.var, "dynamicresolution")
+      aDynamicres = string.find(a.var, "dynamicresolution") or string.find(a.var, "dlss")
+      bDynamicres = string.find(b.var, "dynamicresolution") or string.find(b.var, "dlss")
 
       araytracing = string.find(a.var, "raytracing")
       braytracing = string.find(b.var, "raytracing")
