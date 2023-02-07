@@ -1,5 +1,11 @@
 local Changelog = {
   {
+    version = "1.3.3",
+    changes = {
+      ' - DLSS version support'
+    }
+  },
+  {
     version = "1.3.2",
     changes = {
       ' - Fix for 1.61'
