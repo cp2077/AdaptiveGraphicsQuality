@@ -2,7 +2,9 @@ local Changelog = {
   {
     version = "1.3.4",
     changes = {
-      ' - RT Overdrive support'
+      ' - RT Overdrive support',
+      ' - DLAA support',
+      ' - Slight UI changes',
     }
   },
   {

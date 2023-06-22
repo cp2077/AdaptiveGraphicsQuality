@@ -119,6 +119,7 @@ local scrollPositions = {}
 ---@field minW integer
 ---@field maxW integer
 ---@field saveScroll boolean
+---@field dontResize boolean
 ---@field restoreScroll boolean
 RWindowParams = {}
 ---@param title string
@@ -134,10 +135,14 @@ function R.Window(title, cb, p)
       ImGui.SetNextWindowSizeConstraints(p.minW, p.minH, p.maxW, p.maxH)
     end
 
+    local flag = ImGuiWindowFlags.AlwaysAutoResize
+    if p.dontResize then
+      flag = ImGuiWindowFlags.None
+    end
     if p.isChild then
-      ImGui.BeginChild(title, ImGuiWindowFlags.AlwaysAutoResize)
+      ImGui.BeginChild(title, flag)
     else
-      ImGui.Begin(title, ImGuiWindowFlags.AlwaysAutoResize)
+      ImGui.Begin(title, flag)
     end
 
     -- Save scroll position on onverlay toggle
