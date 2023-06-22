@@ -8,7 +8,7 @@ Helpers = require("Modules/Helpers")
 Tweaks = require("Modules/Tweaks")
 local Window = require("Modules/Window")
 
-App = { ["version"] = "1.3.3" }
+App = { ["version"] = "1.3.4" }
 local isLoaded = false
 App.inited = false
 App.isOverlayOpen = false

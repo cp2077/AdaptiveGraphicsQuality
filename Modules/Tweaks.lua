@@ -10,12 +10,6 @@ local Tweaks = {
     { variant = "gameOptions", group = "Graphics", var = "Developer/FeatureToggles", key = "CharacterSubsurfaceScattering", kind = "bool", default = true },
 
     -- Character
-    { variant = "gameOptions", group = "Graphics", var = "Editor/Characters/Hair", key = "SpecularRandom_Max", kind = "float", default = 0.0 },
-    { variant = "gameOptions", group = "Graphics", var = "Editor/Characters/Hair", key = "SpecularRandom_Min", kind = "float", default = -0.3 },
-    { variant = "gameOptions", group = "Graphics", var = "Editor/Characters/Hair", key = "RoughnessFactor", kind = "float", default = 1.0 },
-    { variant = "gameOptions", group = "Graphics", var = "Editor/Characters/Hair", key = "AlbedoMultiplier", kind = "float", default = 0.6 },
-    { variant = "gameOptions", group = "Graphics", var = "Editor/Characters/Hair", key = "AdditionalAreaRoughness", kind = "float", default = 0.1 },
-
     { variant = "gameOptions", group = "Graphics", var = "Editor/Characters/Skin", key = "SubsurfaceSpecularTintWeight", kind = "float", default = 0.3 },
     { variant = "gameOptions", group = "Graphics", var = "Editor/Characters/Skin", key = "SubsurfaceSpecularTint_B", kind = "float", default = 0.29 },
     { variant = "gameOptions", group = "Graphics", var = "Editor/Characters/Skin", key = "SubsurfaceSpecularTint_G", kind = "float", default = 0.26 },

@@ -1,8 +1,14 @@
 local Changelog = {
   {
+    version = "1.3.4",
+    changes = {
+      ' - RT Overdrive support'
+    }
+  },
+  {
     version = "1.3.3",
     changes = {
-      ' - DLSS version support'
+      ' - DLSS 3 support'
     }
   },
   {

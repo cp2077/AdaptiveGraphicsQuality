@@ -29,10 +29,6 @@ local Settings = {
     -- AMD FSR HERE
     { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/FSR2", kind = "string_list", options = {} },
 
-    -- { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DynamicResolutionScaling", kind = "bool", options = {} },
-    -- { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DRS_TargetFPS", kind = "int", options = {} },
-    -- { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DRS_MinimalResolution", kind = "int", options = {} },
-    -- { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/DRS_MaximalResolution", kind = "int", options = {} },
     { repaint = true, variant = "gameSettings", var = "/video/display/Resolution", kind = "string_list", options = {} },
     { repaint = true, variant = "gameSettings", var = "/video/display/WindowMode", kind = "string_list", options = {} },
     { variant = "gameSettings", var = "/video/display/VSync", kind = "string_list", options = {} },
@@ -42,13 +38,11 @@ local Settings = {
     { variant = "gameSettings", var = "/video/display/MaximumFPS_Value", kind = "int", options = {} },
 
     -- RTX
+    { variant = "gameSettings", var = "/graphics/raytracing/RayTracedPathTracing", kind = "bool", options = {} },
     { variant = "gameSettings", var = "/graphics/raytracing/RayTracing", kind = "bool", options = {} },
     { variant = "gameSettings", var = "/graphics/raytracing/RayTracedReflections", kind = "bool", options = {} },
     { variant = "gameSettings", var = "/graphics/raytracing/RayTracedSunShadows", kind = "bool", options = {} },
     { variant = "gameSettings", var = "/graphics/raytracing/RayTracedLighting", kind = "string_list", options = {} },
-
-    -- Tweaks
-    -- { variant = "gameOptions", var = "/graphics/raytracing/RayTracedLighting", kind = "string_list", options = {} },
   }
 }
 
