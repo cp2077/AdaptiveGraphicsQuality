@@ -5,19 +5,13 @@ local GameSettings = require("Modules/GameSettings")
 local Helpers = require("Modules/Helpers")
 local Cron = require("Modules/Cron")
 
-function ConfirmChanges()
-  Cron.Every(0.1, function (timer)
-    if App.isOverlayOpen then
-      App.shouldCloseOverlay = true
-    else
-      App.shouldCloseOverlay = false
-      timer:Halt()
-      Cron.NextTick(function()
-        GameSettings.Confirm()
-        GameSettings.Save()
-      end)
-    end
-  end)
+function ConfirmChanges(callback)
+  GameSettings.Confirm()
+  GameSettings.Save()
+
+  if callback then
+    callback()
+  end
 
   return true
 end
@@ -27,12 +21,49 @@ function GraphicsQuality.SetSettings(var, val)
   ConfirmChanges()
 end
 
+local settingPreset = false
+
+local presetQueue = {}
+
+function GraphicsQuality.EnsurePreset()
+  if #presetQueue == 0 then
+    return
+  end
+
+  if App.isOverlayOpen then
+    App.shouldCloseOverlay = true
+    return
+  end
+
+  App.shouldCloseOverlay = false
+
+  if settingPreset then
+    return
+  end
+
+  local preset = presetQueue[#presetQueue]
+
+  for k,v in pairs(presetQueue) do presetQueue[k]=nil end
+
+  if preset then
+    settingPreset = true
+    preset()
+  end
+end
 function GraphicsQuality.SetPreset(preset, presetName, delay)
+  table.insert(presetQueue, function()
+    GraphicsQuality._SetPreset(preset, presetName, 0, function ()
+      settingPreset = false
+    end)
+  end)
+end
+
+function GraphicsQuality._SetPreset(preset, presetName, delay, cb)
   if delay == nil then
     delay = 0
   end
 
-  Cron.After(delay, function()
+  local function setPreset()
     if preset == 0 then
       return Helpers.PrintMsg("Couldn't set preset since it doesn't exist. Was it initialized properly?")
     end
@@ -50,33 +81,46 @@ function GraphicsQuality.SetPreset(preset, presetName, delay)
       end
     end
 
+    function EnsureDlssd()
+      for _,k in pairs(preset) do
+        if k.var ==  "/graphics/dlss/DLSS_D" then
+          GameSettings.Set(k.var, k.value)
+        end
+      end
+    end
+    
     if IsCurrentPreset(preset) then
       Helpers.PrintDebugMsg("skipping the same preset")
+      settingPreset = false
       return
     end
 
-
     for _,k in pairs(preset) do
-      -- if k.var ~=  "/graphics/dlss/DLSS"
-      --    and k.var ~=  "/graphics/dynamicresolution/FSR"
-      --    and k.var ~=  "/graphics/dynamicresolution/DynamicResolutionScaling"
-      --    and k.var ~=  "/video/display/Resolution" then
       GameSettings.Set(k.var, k.value)
       -- end
     end
 
-    -- -- DOF should always be enabled for the photomode otherwise it breaks
-    -- if presetName == "photo" then
-    --   GameSettings.Set("/graphics/basic/DepthOfField", true)
-    -- end
+    EnsureDlssd()
 
-    ConfirmChanges()
-    -- if ConfirmChanges() then
-    --   Helpers.PrintDebugMsg(tostring(presetName).. " preset has been applied")
-    -- end
+    ConfirmChanges(function()
+      Cron.NextTick(function ()
+        EnsureDlssd()
+        Cron.NextTick(function ()
+          EnsureDlssd()
+          cb()
+        end, {})
+      end, {})
+    end)
 
     App.currentPreset = presetName
-  end)
+  end
+
+  if delay == 0 then
+    setPreset()
+  else
+    Cron.After(delay, setPreset, {})
+  end
+
 end
 
 function GraphicsQuality.GetCurrentPreset()
@@ -96,7 +140,7 @@ function GraphicsQuality.GetCurrentPreset()
     if value ~= nil then
       table.insert(list, { var = k.var, kind = k.kind, value = value })
     else
-      Helpers.PrintMsg("couldn't get default preset")
+      Helpers.PrintMsg("couldn't get value for " .. k.var)
     end
   end
 

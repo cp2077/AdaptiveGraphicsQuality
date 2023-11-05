@@ -6,7 +6,9 @@ local Config = {
   inner = {
     isStealthACombat = false,
     isRestrictedAreaACombat = false,
-    isDangerousAreaACombat = true,
+    isDangerousAreaACombat = false,
+    combatUnholstered = true,
+    combatUnholsteredVehicle = false,
     isDebug = false,
     switchToNormalWhenDisabled = false,
     disableAutoswitchOnHotkey = false,
@@ -57,6 +59,14 @@ end
 function Migrate()
   if Config.inner.disableAutoswitchOnHotkey == nil then
     Config.inner.disableAutoswitchOnHotkey = false
+  end
+
+  if Config.inner.combatUnholstered == nil then
+    Config.inner.combatUnholstered = true
+  end
+
+  if Config.inner.combatUnholsteredVehicle == nil then
+    Config.inner.combatUnholsteredVehicle = true
   end
 
   for presetName, currPreset in pairs(Config.inner.presets) do

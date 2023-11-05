@@ -8,7 +8,7 @@ Helpers = require("Modules/Helpers")
 Tweaks = require("Modules/Tweaks")
 local Window = require("Modules/Window")
 
-App = { ["version"] = "1.3.4" }
+App = { ["version"] = "1.4.0" }
 local isLoaded = false
 App.inited = false
 App.isOverlayOpen = false
@@ -87,6 +87,7 @@ local function assertDefaultPresetsExist()
     if value == 0 then
       changed = true
       -- clone the list
+
       Config.inner.presets[presetName] = json.decode(json.encode(defaultPreset))
 
       -- Default photomode's DOF option to true in order to not break it.
@@ -186,12 +187,21 @@ function App.new()
 
   local checkEvery = Vars.CHECK_COMBAR_EVERY_MS / 1000
 
+  -- Cron.Every(0.2, GraphicsQuality.EnsurePreset, {})
+
   registerForEvent("onUpdate", function(delta)
     if not App.inited or not Config.isReady then
       return
     end
 
+    
     Cron.Update(delta)
+    
+    if not GameUI.IsMainMenu() and (GameUI.IsMenu() or GameUI.IsLoading()) then
+      return
+    end
+
+    GraphicsQuality.EnsurePreset()
 
     if not isLoaded then
       return
@@ -215,6 +225,7 @@ function App.new()
 
     local isInCombat =
       combatState == "InCombat" or
+      (Config.inner.combatUnholstered and Helpers.HasWeapon() and (not IsInVehicle() or Config.inner.combatUnholsteredVehicle)) or
       (Config.inner.isDangerousAreaACombat and securityZone == "DangerousZone") or
       (Config.inner.isRestrictedAreaACombat and securityZone == "RestrictedZone")
 
@@ -404,7 +415,7 @@ function App.new()
     if Config.inner.disableAutoswitchOnHotkey then
       App.isEnabled = false
     end
-    GraphicsQuality.SetPreset(Config.inner.presets.photo, "photo", 0.3)
+    GraphicsQuality.SetPreset(Config.inner.presets.photo, "photo", 0.4)
   end)
   registerHotkey("agq_toggle_force_menu", 'Force "Menu" preset', function()
     if Config.inner.disableAutoswitchOnHotkey then

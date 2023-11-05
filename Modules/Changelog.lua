@@ -1,5 +1,14 @@
 local Changelog = {
   {
+    version = "1.4.0",
+    changes = {
+      ' - Ray Reconstruction (DLSSD) support',
+      ' - New option: Combat Mode when unholstered'
+      ' - New Tweak parameters: BounceNumber and RayNumber for Path Tracing',
+      ' - Slight stability improvements',
+    }
+  },
+  {
     version = "1.3.4",
     changes = {
       ' - RT Overdrive support',

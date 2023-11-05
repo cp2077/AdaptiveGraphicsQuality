@@ -230,11 +230,15 @@ local function renderPresetTabContent(presetName)
       local varNameBase, varNameDetailed = GetVarName(setting.var)
 
       local info = getSettingsInfo(setting.var)
-      if info.group then
-        R.NewLine(1)
+
+      if varNameDetailed == "DLSS_D" then
+        varNameDetailed = "RayReconstruction"
       end
 
       if info then
+        if info.group then
+          R.NewLine(1)
+        end
 
         local function renderInfo()
           if info.repaint then
@@ -320,6 +324,7 @@ local function renderPresetTabContent(presetName)
             if varNameDetailed == "DynamicResolutionScaling" then
               SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS", "Off")
               SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR2", "Off")
+              SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/XESS", "Off")
               SetPresetSettingsValue(presetName, "/graphics/raytracing/RayTracing", false)
             end
 
@@ -352,6 +357,15 @@ local function renderPresetTabContent(presetName)
                 if varNameDetailed == "FSR2" then
                   SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS", "Off")
                   SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
+                  SetPresetSettingsValue(presetName, "/graphics/dlss/DLSSFrameGen", false)
+                  SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS_D", false)
+                end
+                if varNameDetailed == "XESS" then
+                  SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS", "Off")
+                  SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR2", "Off")
+                  SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
+                  SetPresetSettingsValue(presetName, "/graphics/dlss/DLSSFrameGen", false)
+                  SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS_D", false)
                 end
 
                 if isOverride then
@@ -521,7 +535,7 @@ local function renderTweaksTab()
         local curValue = GameOptions.GetInt(tweakOption.var, tweakOption.key)
         local value
         local used
-        R.ItemWidth(100, function()
+        R.ItemWidth(300, function()
           value, used = R.InputInt(tweakOption.key, curValue)
         end)
         if used then
@@ -619,6 +633,26 @@ local function renderSettingsTab()
       OnConfigChange()
     end
 
+    -- Combat when unholstered
+    local value, pressed = R.CheckBox('"Combat" when unholstered', Config.inner.combatUnholstered,
+      { tooltip = '"Combat" preset will be enabled every time you unholster a weapon' })
+    if pressed then
+      Config.inner.combatUnholstered = value
+      OnConfigChange()
+    end
+
+    if Config.inner.combatUnholstered then
+      -- Combat when unholstered in a vehicle
+      local value, pressed = R.CheckBox('"Combat" when unholstered in vehicle', Config.inner.combatUnholsteredVehicle,
+        { tooltip = '"Combat" preset will be enabled every time you unholster a weapon in a vehicle' })
+      if pressed then
+        Config.inner.combatUnholsteredVehicle = value
+        OnConfigChange()
+      end
+      
+    end
+
+    
     -- Combat in dangerous area
     local value, pressed = R.CheckBox('"Combat" in "Dangerous Area"', Config.inner.isDangerousAreaACombat,
       { tooltip = '"Combat" preset will be enabled every time you enter a "Dangerous" area.' })
