@@ -23,7 +23,7 @@ function GetTreeName(k)
   if k == "combat" then return "Combat" end
   if k == "scene" then return "Cutscene" end
   if k == "override" then return "Override" end
-  return ""
+  return k
 end
 
 function GetVarName(settingsVar)
@@ -75,7 +75,6 @@ function firstToUpper(str)
   return (str:gsub("^%l", string.upper))
 end
 
-local currPresetTab = "normal"
 local sections = {
   ["basic"] = false,
   ["advanced"] = false,
@@ -110,38 +109,53 @@ function TooltipIfHovered(text)
 end
 ---
 
+function IsAutoPreset(presetName)
+  for i,k in pairs({ "normal", "photo", "combat", "vehicle", "scene", "menu" }) do
+    if presetName == k then
+      return true
+    end
+  end
+  return false
+end
+
 local function renderPresetTab(presetName)
 
   local isActivePreset = App.currentPreset == presetName
-  local isActiveTab = currPresetTab == presetName
+  local isActiveTab = Config.inner.currPresetTab == presetName
   local treeName = GetTreeName(presetName)
-  local buttonName = (isActivePreset and "> " or " ") .. (isActivePreset and treeName:upper() or treeName) .. (isActivePreset and " <" or " ")
+  -- local buttonName = (isActivePreset and "> " or " ") .. (isActivePreset and treeName:upper() or treeName) .. (isActivePreset and " <" or " ")
+  local buttonName = " " .. treeName .. " "
+
+  if isActivePreset then
+    buttonName = buttonName:upper()
+  end
 
   local colors = {}
   local tooltip = nil
   if isActivePreset then
     tooltip = "Active"
   end
-  if not Config.inner.enabled[presetName] then
-    colors = {{ ImGuiCol.Text, 1,1,1, 0.45 }}
-    tooltip = "Disabled"
+  if not Config.inner.enabled[presetName] and IsAutoPreset(presetName) then
+    colors = {{ ImGuiCol.Text, 1,1,1, 0.35 }}
+    tooltip = "Uncheck to deactivate auto switch for this preset"
   end
 
   if presetName == "menu" then
     tooltip = "[Inventory and Character Creator] " .. (tooltip or "")
   end
-  -- if isActivePreset then
-  --   if isActiveTab then
-  --     table.insert(colors, {ImGuiCol.Button, 0.0, 0.6, 0.2, 0.5})
-  --   else
-  --     table.insert(colors, {ImGuiCol.Button, 0.0, 0.6, 0.2, 1.0})
-  --   end
-  --   table.insert(colors, {ImGuiCol.ButtonActive, 0.0, 0.6, 0.2, 0.5})
-  --   table.insert(colors, {ImGuiCol.ButtonHovered, 0.0, 0.6, 0.2, 0.7})
-  -- end
+  if isActivePreset then
+    if isActiveTab then
+      table.insert(colors, {ImGuiCol.Button, 0.0, 0.6, 0.2, 0.45})
+    else
+      table.insert(colors, {ImGuiCol.Button, 0.0, 0.6, 0.2, 1.0})
+    end
+    table.insert(colors, {ImGuiCol.ButtonActive, 0.0, 0.6, 0.2, 0.5})
+    table.insert(colors, {ImGuiCol.ButtonHovered, 0.0, 0.6, 0.2, 0.7})
+  end
   
   if R.Button(buttonName, { id = buttonName, disabled = isActiveTab, colors = colors, tooltip = tooltip }) then
-    currPresetTab = presetName
+    Config.inner.currPresetTab = presetName
+    Config.SaveConfig()
   end
   R.SameLine()
 
@@ -213,16 +227,33 @@ local function getSettingsInfo(var)
   end
 end
 
+local function GetSettingValueIdx(setting, presetName)
+  for i, s in pairs(sortSettings(getCachedSettingsSearch(presetName))) do
+    if s.var == setting then
+      return i
+    end
+  end
+  return 1
+end
+
+local function padding()
+  R.CheckBox("",false, {colors = {{ ImGuiCol.Text, 0,0,0, 0.0 },{ ImGuiCol.CheckMark, 0,0,0, 0.0 },{ ImGuiCol.FrameBg,        0,0,0, 0.0 },
+  { ImGuiCol.FrameBgHovered,        0,0,0, 0.0 },{ ImGuiCol.FrameBgActive,        0,0,0, 0.0 },
+  { ImGuiCol.Button,        0,0,0, 0.0 },{ ImGuiCol.ButtonActive,  0,0,0, 0.0 },{ ImGuiCol.ButtonHovered, 0,0,0, 0.0 },}})
+  R.SameLine()
+  R.SameLine()
+end
 
 local function renderPresetTabContent(presetName)
-  if currPresetTab ~= presetName then
+  if Config.inner.currPresetTab ~= presetName then
     return
   end
 
   local isOverride = presetName == "override"
   local isScene = presetName == "scene"
-
-  R.NewLine(1)
+  
+  padding()
+  R.Text("Dynamic Resolution")
 
   for i, setting in pairs(sortSettings(getCachedSettingsSearch(presetName))) do
     -- this breaks photomode
@@ -238,50 +269,225 @@ local function renderPresetTabContent(presetName)
       if info then
         if info.group then
           R.NewLine(1)
+          padding()
+          R.Text(firstToUpper(varNameBase))
         end
-
+        
+        local isActivePreset = Config.inner.enabled[presetName] or not IsAutoPreset(presetName)
+        local isIgnore = not not Config.inner.presets[presetName][i].ignore
         local function renderInfo()
           if info.repaint then
             R.SameLine()
             local tooltip = "This setting reloads reshade and causes slight stutter"
+            local opacity = 0.7
+            if not isActivePreset then
+              opacity = 0.5
+            end
+            if isIgnore then
+              opacity = 0.2
+            end
             R.Button("R", {
               tooltip = tooltip,
               small = true,
               colors = {
-                { ImGuiCol.Button,        0.9, 0.70, 0.45, 0.7 },
+                { ImGuiCol.Button,        0.9, 0.70, 0.45, opacity },
                 { ImGuiCol.Text,          0.0, 0.0,  0.0,  1.0 },
-                { ImGuiCol.ButtonActive,  0.9, 0.70, 0.45, 0.7 },
-                { ImGuiCol.ButtonHovered, 0.9, 0.70, 0.45, 0.7 },
+                { ImGuiCol.ButtonActive,  0.9, 0.70, 0.45, opacity },
+                { ImGuiCol.ButtonHovered, 0.9, 0.70, 0.45, opacity },
               }
             })
           end
         end
         local mainTextColors = {}
 
-        if not Config.inner.enabled[presetName] then
-          mainTextColors = { { ImGuiCol.Text, 1, 1, 1, 0.45 } }
+        local value, used = R.CheckBox(
+          "",
+          not isIgnore,
+          { 
+            tooltip = "Uncheck to ignore this option", 
+            id = presetName .. tostring(i) .. varNameDetailed, 
+            colors = mainTextColors
+          }
+        )
+        R.SameLine()
+        -- R.Text("")
+        R.SameLine()
+        if used then
+          Config.inner.presets[presetName][i].ignore = not value
+          OnConfigChange()
+        end
+
+        local function ignoredColors()
+          return {
+            { ImGuiCol.Text, 1, 1, 1, 0.2 },
+            { ImGuiCol.CheckMark, 0.25, 0.35, 0.45, 0.6 },
+            { ImGuiCol.FrameBg,        0.25, 0.35, 0.45, 0.2 },
+            { ImGuiCol.FrameBgHovered,        0.25, 0.35, 0.45, 0.3 },
+            { ImGuiCol.FrameBgActive,        0.25, 0.35, 0.45, 0.3 },
+            { ImGuiCol.Button,        0.25, 0.35, 0.45, 0.2 },
+            { ImGuiCol.ButtonActive,  0.25, 0.35, 0.45, 0.2 },
+            { ImGuiCol.ButtonHovered, 0.25, 0.35, 0.45, 0.2 },
+          }
+        end
+
+        mainTextColors = { { ImGuiCol.Text, 1, 1, 1, 1 } }
+        if not isActivePreset then
+          if info and info.repaint then
+            mainTextColors = { { ImGuiCol.Text, 0.9, 0.70, 0.45, 0.65 } }
+          else
+            mainTextColors = { { ImGuiCol.Text, 1, 1, 1, 0.65 } }
+          end
         elseif info and info.repaint then
           mainTextColors = { { ImGuiCol.Text, 0.9, 0.70, 0.45, 1 } }
         end
-
-        if setting.kind ~= "bool" then
-          R.Text(firstToUpper(varNameDetailed), { colors = mainTextColors })
-          renderInfo()
+        if isIgnore then
+          mainTextColors = {
+            { ImGuiCol.Text, 1, 1, 1, 0.2 },
+            { ImGuiCol.CheckMark, 0.25, 0.35, 0.45, 0.6 },
+            { ImGuiCol.FrameBg,        0.25, 0.35, 0.45, 0.2 },
+            { ImGuiCol.FrameBgHovered,        0.25, 0.35, 0.45, 0.3 },
+            { ImGuiCol.FrameBgActive,        0.25, 0.35, 0.45, 0.3 },
+            { ImGuiCol.Button,        0.25, 0.35, 0.45, 0.2 },
+            { ImGuiCol.ButtonActive,  0.25, 0.35, 0.45, 0.2 },
+            { ImGuiCol.ButtonHovered, 0.25, 0.35, 0.45, 0.2 },
+          }
         end
+
+        -- handle ray traced group
+        local colors = mainTextColors
+        local v = varNameDetailed
+        if v == "RayTracedPathTracing"
+           or v == "RayReconstruction"
+           or v == "RayTracedReflections"
+           or v == "RayTracedSunShadows"
+           or v == "RayTracedLocalShadows"
+           or v == "RayTracedLighting"
+        then
+          local rtIdx = GetSettingValueIdx("/graphics/raytracing/RayTracing", presetName)
+          local curr, _ = GetSettingsOptions(sortSettings(getCachedSettingsSearch(presetName))[rtIdx])
+
+          if (
+            not Config.inner.presets[presetName][rtIdx].value
+            or (not not Config.inner.presets[presetName][rtIdx].ignore and App.currentPreset ~= "" and not Config.inner.presets[App.currentPreset][GetSettingValueIdx("/graphics/raytracing/RayTracing", presetName)].value)
+            or (App.currentPreset == "" and not curr)
+          ) then
+              colors = ignoredColors()
+          end
+        end
+
+        local displayName = firstToUpper(varNameDetailed)
+        if displayName == "RayTracing" then
+          displayName = "Ray Tracing"
+        elseif displayName == "RayTracedPathTracing" then
+          displayName = "Path Tracing"
+        elseif displayName == "RayReconstruction" then
+          displayName = "DLSS Ray Reconstruction"
+        elseif displayName == "RayTracedReflections" then
+          displayName = "Ray-Traced Reflections"
+        elseif displayName == "RayTracedSunShadows" then
+          displayName = "Ray-Traced Sun Shadows"
+        elseif displayName == "RayTracedLocalShadows" then
+          displayName = "Ray-Traced Local Shadows"
+        elseif displayName == "RayTracedLighting" then
+          displayName = "Ray-Traced Lighting"
+        elseif displayName == "WindowMode" then
+          displayName = "Windowed Mode"
+        elseif displayName == "MaximumFPS_OnOff" then
+          displayName = "FPS Limit"
+        elseif displayName == "MaximumFPS_Value" then
+          displayName = "FPS Limit Value"
+        elseif displayName == "ReflexMode" then
+          displayName = "NVIDIA Reflex"
+        elseif displayName == "HDRModes" then
+          displayName = "HDR Mode"
+        elseif displayName == "DepthOfField" then
+          displayName = "Depth of Field"
+        elseif displayName == "LensFlares" then
+          displayName = "Lens Flare"
+        elseif displayName == "ChromaticAberration" then
+          displayName = "Chromatic Aberration"
+        elseif displayName == "FilmGrain" then
+          displayName = "Film Grain"
+        elseif displayName == "MotionBlur" then
+          displayName = "Motion Blur"
+        elseif displayName == "AmbientOcclusion" then
+          displayName = "Ambient Occlusion"
+        elseif displayName == "CascadedShadowsRange" then
+          displayName = "Cascaded ShadowsRange"
+        elseif displayName == "CascadedShadowsResolution" then
+          displayName = "Cascaded Shadows Resolution"
+        elseif displayName == "ContactShadows" then
+          displayName = "Contact Shadows"
+        elseif displayName == "DistantShadowsResolution" then
+          displayName = "Distant Shadows Resolution"
+        elseif displayName == "LODPreset" then
+          displayName = "Level of Detail (LOD)"
+        elseif displayName == "LocalShadowsQuality" then
+          displayName = "Local Shadows Quality"
+        elseif displayName == "MaxDynamicDecals" then
+          displayName = "Max Dynamic Decals"
+        elseif displayName == "ScreenSpaceReflectionsQuality" then
+          displayName = "Screen Space Reflections Quality"
+        elseif displayName == "ShadowMeshQuality" then
+          displayName = "Local Shadow Mesh Quality"
+        elseif displayName == "VolumetricCloudsQuality" then
+          displayName = "Volumetric Cloud Quality"
+        elseif displayName == "VolumetricFogResolution" then
+          displayName = "Volumetric Fog Resolution"
+        elseif displayName == "GlobaIlluminationRange" then
+          displayName = "Global Illumination Rage"
+        elseif displayName == "ColorPrecision" then
+          displayName = "Color Precision"
+        elseif displayName == "SubsurfaceScatteringQuality" then
+          displayName = "Subsurface Scattering Quality"
+        elseif displayName == "FacialTangentUpdates" then
+          displayName = "Facial Tangent Updates"
+        elseif displayName == "DLSSFrameGen" then
+          displayName = "DLSS Frame Generation"
+        elseif displayName == "DLSS" then
+          displayName = "DLSS Super Resolution"
+        elseif displayName == "FSR2" then
+          displayName = "AMD FidelityFX Super Resolution 2.1"
+        elseif displayName == "XESS" then
+          displayName = "Intel Xe Super Sampling 1.1"
+        elseif displayName == "DLAA" then
+          displayName = "NVIDIA DLAA"
+        end
+
+      
+        if setting.kind ~= "bool" then
+          R.Text(displayName, { colors = colors })
+          renderInfo()
+
+          padding()
+        end
+
+
+        local currentValue = Config.inner.presets[presetName][i].value
 
         local current, options = GetSettingsOptions(setting)
 
+        if isIgnore then
+          if App.currentPreset ~= "" then
+            currentValue = Config.inner.presets[App.currentPreset][i].value
+          else
+            currentValue = current
+          end
+        end
+
+
+
         if setting.kind == "int" then
-          local settingsValue = (type(Config.inner.presets[presetName][i].value) == "number") and
-          Config.inner.presets[presetName][i].value or 100
+          local settingsValue = (type(currentValue) == "number") and
+            currentValue or 100
           local itemID = presetName .. tostring(i) .. tostring(settingsValue)
           local value
           local used
           R.ItemWidth(250, function()
-            value, used = R.InputInt("", settingsValue, { id = itemID, step = 5, stepFast = 10 })
+            value, used = R.InputInt("", settingsValue, { id = itemID, step = 5, stepFast = 10, colors = mainTextColors })
           end)
 
-          if used then
+          if used and not isIgnore then
             if varNameDetailed == "DRS_TargetFPS" or varNameDetailed == "DRS_MinimalResolution" or varNameDetailed == "DRS_MaximalResolution" then
               local min = 5
               local max = 200
@@ -296,11 +502,13 @@ local function renderPresetTabContent(presetName)
             end
           end
         elseif setting.kind == "bool" then
-          local isActiveOption = Config.inner.presets[presetName][i].value
-          local value, used = R.CheckBox(firstToUpper(varNameDetailed), isActiveOption, { colors = mainTextColors })
+          local isActiveOption = currentValue
+          local v = varNameDetailed
+
+          local value, used = R.CheckBox(displayName, isActiveOption, { colors = colors })
           renderInfo()
 
-          if setting.var == "/graphics/basic/DepthOfField" and currPresetTab == "photo" then
+          if setting.var == "/graphics/basic/DepthOfField" and Config.inner.currPresetTab == "photo" then
             R.SameLine()
             R.Button(
               "?",
@@ -316,7 +524,7 @@ local function renderPresetTabContent(presetName)
               }
             )
           end
-          if used then
+          if used and not isIgnore then
             -- if varNameDetailed == "RayTracing" then
             --   SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
             -- end
@@ -334,11 +542,14 @@ local function renderPresetTabContent(presetName)
         else
           if #options > 7 or info.combo then
             for iOpt, kOpt in pairs(options) do
-              if Config.inner.presets[presetName][i].value == kOpt then
+              if currentValue == kOpt then
                 local item
                 local clicked
-                item, clicked = R.ComboItem(firstToUpper(varNameDetailed), iOpt - 1, options, #options)
-                if clicked then
+                R.ItemWidth(250, function()
+                  item, clicked = R.ComboItem(displayName, iOpt - 1, options, #options, { colors = mainTextColors })
+                end)
+      
+                if clicked and not isIgnore then
                   Config.inner.presets[presetName][i].value = options[item + 1]
                   OnConfigChange()
                 end
@@ -346,10 +557,28 @@ local function renderPresetTabContent(presetName)
             end
           else
             for iOpt, kOpt in pairs(options) do
-              local isActiveOption = Config.inner.presets[presetName][i].value == kOpt
+              local isActiveOption = currentValue == kOpt
               local buttonText = tostring(kOpt)
+              local tooltip = nil
+              if varNameDetailed == "DLSS" or varNameDetailed == "FSR2" or varNameDetailed == "XESS" then
+                tooltip = tostring(kOpt)
+                if buttonText == "Auto" then
+                  buttonText = "A"
+                elseif buttonText == "Ultra Quality" then
+                  buttonText = "UQ"
+                elseif buttonText == "Quality" then
+                  buttonText = "Q"
+                elseif buttonText == "Balanced" then
+                  buttonText = "B"
+                elseif buttonText == "Performance" then
+                  buttonText = "P"
+                elseif buttonText == "Ultra Performance" then
+                  buttonText = "UP"
+                end
+              end
+
               local buttonID = presetName .. tostring(i) .. tostring(kOpt) .. "switch"
-              if R.Button(buttonText, { disabled = isActiveOption, id = buttonID }) and not isActiveOption then
+              if R.Button(buttonText, { tooltip = tooltip, disabled = isActiveOption, id = buttonID, colors = colors }) and not isActiveOption and not isIgnore then
                 if varNameDetailed == "DLSS" then
                   SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
                   SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR2", "Off")
@@ -389,7 +618,7 @@ local function renderPresetTabContent(presetName)
             --   }})
             -- end
 
-            if setting.var == "/graphics/advanced/DistantShadowsResolution" and currPresetTab == "photo" then
+            if setting.var == "/graphics/advanced/DistantShadowsResolution" and Config.inner.currPresetTab == "photo" then
               R.SameLine()
               R.Button("?",
                 {
@@ -413,19 +642,40 @@ local function renderPresetTabContent(presetName)
 end
 
 local function renderCopyPasteMenu()
+  if IsAutoPreset(Config.inner.currPresetTab) then
+    R.Text(firstToUpper(Config.inner.currPresetTab) .. " ")
+  else
+    R.Text("Custom #" .. firstToUpper(Config.inner.currPresetTab) .. " ")
+  end
+  R.SameLine()
   if R.Button(" Copy ", { tooltip = "Copy current preset", sameLine = true, small = true }) then
-    copiedPreset = json.decode(json.encode(Config.inner.presets[currPresetTab]))
+    copiedPreset = json.decode(json.encode(Config.inner.presets[Config.inner.currPresetTab]))
   end
 
   if R.Button(" Paste ", { disabled = copiedPreset == nil, tooltip = "Paste copied preset", small = true }) and copiedPreset ~= nil then
-    Config.inner.presets[currPresetTab] = copiedPreset
+    Config.inner.presets[Config.inner.currPresetTab] = copiedPreset
     OnConfigChange()
+  end
+  R.SameLine()
+  if R.Button(" Force ", { tooltip = "Force activate this preset", sameLine = true, small = true }) then
+    if Config.inner.disableAutoswitchOnHotkey then
+      App.isEnabled = false
+    end
+    GraphicsQuality.RequestPreset(Config.inner.presets[Config.inner.currPresetTab], Config.inner.currPresetTab)
+  end
+  if App.shouldCloseOverlay then
+    R.NewLine()
+    R.Text("Close CET overlay to apply changes", { colors = { { ImGuiCol.Text, unpack(R.Colors.Red) } } })
   end
 end
 
 local function renderPresetsTabs()
   -- TABS
   for i, presetName in pairs({ "normal", "photo", "combat", "vehicle", "scene", "menu" }) do
+    renderPresetTab(presetName)
+  end
+  R.NewLine()
+  for i, presetName in pairs({ "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" }) do
     renderPresetTab(presetName)
   end
   R.NewLine()
@@ -437,11 +687,11 @@ local function renderPresetsTabs()
 
   R.SameLine()
 
-  if currPresetTab ~= "normal" and currPresetTab ~= "override" then
-    local value, pressed = R.CheckBox("Enabled", Config.inner.enabled[currPresetTab],
-      { tooltip = 'Turn off this preset' })
+  if IsAutoPreset(Config.inner.currPresetTab) then
+    local value, pressed = R.CheckBox("Auto switch", Config.inner.enabled[Config.inner.currPresetTab],
+      { tooltip = 'Uncheck to turn off auto switch for this preset' })
     if pressed then
-      Config.inner.enabled[currPresetTab] = value
+      Config.inner.enabled[Config.inner.currPresetTab] = value
       OnConfigChange()
     end
   else
@@ -455,11 +705,16 @@ local function renderPresetsTabs()
 
   R.Separator()
 
+  local presets = { 
+    "normal", "combat", "vehicle", "menu", "photo", "scene", "override",
+    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+   }
+
   -- CONTENT
   R.Window(
     "preset_settings",
     function()
-      for i, presetName in pairs({ "normal", "combat", "vehicle", "menu", "photo", "scene", "override" }) do
+      for i, presetName in pairs(presets) do
         renderPresetTabContent(presetName)
       end
     end,
@@ -607,35 +862,44 @@ end
 local function renderSettingsTab()
   local function render()
     -- Enabled
-    local value, pressed = R.CheckBox("Enabled", App.isEnabled, { tooltip = 'Turn off auto auto switch completely' })
+    local value, pressed = R.CheckBox("Global auto switch", App.isEnabled, { tooltip = 'Uncheck to disable auto switch functionality' })
     if pressed then
       App.isEnabled = value
-      OnConfigChange()
+      Config.SaveConfig()
     end
+
+    -- enabled on start
+    local value, pressed = R.CheckBox('Enable global auto switch on boot', Config.inner.enabledOnStart, { tooltip = 'Auto switch will be enabled upon game start' })
+    if pressed then
+      Config.inner.enabledOnStart = value
+      Config.SaveConfig()
+    end
+
+    R.NewLine()
 
     -- Autoswitch to normal
-    local value, pressed = R.CheckBox('Auto switch to "Normal" preset when disabled',
-      Config.inner.switchToNormalWhenDisabled)
-    if pressed then
-      Config.inner.switchToNormalWhenDisabled = value
-      OnConfigChange()
-    end
+    -- local value, pressed = R.CheckBox('Set to "Normal" preset when auto switch is disabled', Config.inner.switchToNormalWhenDisabled)
+    -- if pressed then
+    --   Config.inner.switchToNormalWhenDisabled = value
+    --   OnConfigChange()
+    -- end
 
     -- disable autoswitch on hotkey
-    local value, pressed = R.CheckBox('Disable auto switch when switched using hotkey',
-      Config.inner.disableAutoswitchOnHotkey)
+    local value, pressed = R.CheckBox('Disable auto switch when hotkey switch is used', Config.inner.disableAutoswitchOnHotkey)
     if pressed then
       Config.inner.disableAutoswitchOnHotkey = value
       if value then
         Config.inner.switchToNormalWhenDisabled = false
       end
 
-      OnConfigChange()
+      Config.SaveConfig()
     end
+
+    R.NewLine()
 
     -- Combat when unholstered
     local value, pressed = R.CheckBox('"Combat" when unholstered', Config.inner.combatUnholstered,
-      { tooltip = '"Combat" preset will be enabled every time you unholster a weapon' })
+      { tooltip = '"Combat" preset will be activated every time you unholster' })
     if pressed then
       Config.inner.combatUnholstered = value
       OnConfigChange()
@@ -643,8 +907,8 @@ local function renderSettingsTab()
 
     if Config.inner.combatUnholstered then
       -- Combat when unholstered in a vehicle
-      local value, pressed = R.CheckBox('"Combat" when unholstered in vehicle', Config.inner.combatUnholsteredVehicle,
-        { tooltip = '"Combat" preset will be enabled every time you unholster a weapon in a vehicle' })
+      local value, pressed = R.CheckBox('"Combat" when unholstered in a vehicle', Config.inner.combatUnholsteredVehicle,
+        { tooltip = '"Combat" preset will be activated every time you unholster inside a vehicle' })
       if pressed then
         Config.inner.combatUnholsteredVehicle = value
         OnConfigChange()
@@ -652,18 +916,18 @@ local function renderSettingsTab()
       
     end
 
-    
     -- Combat in dangerous area
     local value, pressed = R.CheckBox('"Combat" in "Dangerous Area"', Config.inner.isDangerousAreaACombat,
-      { tooltip = '"Combat" preset will be enabled every time you enter a "Dangerous" area.' })
+      { tooltip = '"Combat" preset will be activated every time you enter a "Dangerous" area.' })
     if pressed then
       Config.inner.isDangerousAreaACombat = value
       OnConfigChange()
     end
+    
 
     -- Combat in restricted area
     local value, pressed = R.CheckBox('"Combat" in "Restricted Area"', Config.inner.isRestrictedAreaACombat,
-      { tooltip = '"Combat" preset will be enabled every time you enter a "Restricted" area.' })
+      { tooltip = '"Combat" preset will be enabled every time you enter a "Restricted" area (recommended)' })
     if pressed then
       Config.inner.isRestrictedAreaACombat = value
       OnConfigChange()
@@ -699,9 +963,9 @@ function Window.Draw(isConfigReady)
   local mainWindowColors = {
     { ImGuiCol.Border,        0,    0,    0,    0 },
     { ImGuiCol.ScrollbarBg,   0,    0,    0,    0 },
-    { ImGuiCol.TitleBg,       0,    0,    0,    0.8 },
-    { ImGuiCol.TitleBgActive, 0,    0,    0,    0.8 },
-    { ImGuiCol.WindowBg,      0,    0,    0,    0.8 },
+    { ImGuiCol.TitleBg,       0,    0,    0,    0.7 },
+    { ImGuiCol.TitleBgActive, 0,    0,    0,    0.7 },
+    { ImGuiCol.WindowBg,      0,    0,    0,    0.7 },
     { ImGuiCol.FrameBg,       0.25, 0.35, 0.45, 0.8 },
     { ImGuiCol.Separator,     0.25, 0.35, 0.45, 0.8 },
   }
@@ -710,7 +974,7 @@ function Window.Draw(isConfigReady)
   local mainWindowVars = {
     { ImGuiStyleVar.WindowRounding, 7.0 },
     { ImGuiStyleVar.ScrollbarSize,  4 },
-    { ImGuiStyleVar.WindowMinSize,  480, winHeight },
+    -- { ImGuiStyleVar.WindowMinSize,  480, winHeight },
   }
 
   local function onConfigNotReady()
@@ -731,20 +995,17 @@ function Window.Draw(isConfigReady)
       onSettingsApplyError()
     else
       if not App.isEnabled then
-        R.NewLine()
-        R.Text(" Autoswitch is turned off ")
-        R.NewLine()
+        R.Text(" Global auto switch is off ", { colors = {{ ImGuiCol.Text, unpack(R.Colors.Red) }} })
+      else
+        R.Text(" Global auto switch is on ", { colors = {{ ImGuiCol.Text, unpack(R.Colors.Green) }} })
       end
       onRenderTabs()
-
-      if App.shouldCloseOverlay then
-        R.NewLine(1)
-        R.Text("Close CET overlay to apply changes", { colors = { { ImGuiCol.Text, unpack(R.Colors.Red) } } })
-      end
     end
   end
+  
+  local scale = ImGui.GetFontSize() / 18
 
-  R.Window("Adaptive Graphics Quality", renderMainWindow, { colors = mainWindowColors, vars = mainWindowVars, dontResize = true,   })
+  R.Window("Adaptive Graphics Quality", renderMainWindow, { minH = 480 * scale, minW = 350 * scale, maxH = 900 * scale, maxW = 500 * scale, colors = mainWindowColors, vars = mainWindowVars, dontResize = true,   })
 
   R.Asserts()
 end

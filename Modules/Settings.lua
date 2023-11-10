@@ -3,6 +3,7 @@ local Settings = {
 
     -- DLSS
     { repaint = true, variant = "gameSettings", var = "/graphics/dlss/DLSS", kind = "string_list", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/dlss/DLAA", kind = "bool", options = {} },
     { repaint = false, variant = "gameSettings", var = "/graphics/dlss/DLSSFrameGen", kind = "bool", options = {} },
     -- { repaint = false, variant = "gameSettings", var = "/graphics/dlss/DLSS_Sharpness", kind = "float", options = {} },
     -- { repaint = true, variant = "gameSettings", var = "/graphics/dlss/DLSS_D", kind = "bool", options = {} },
@@ -13,7 +14,6 @@ local Settings = {
     { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/XESS", kind = "string_list", options = {} },
     -- { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/XESS_Sharpness", kind = "float", options = {} },
 
-    { repaint = true, variant = "gameSettings", var = "/graphics/dlss/DLAA", kind = "bool", options = {} },
     -- { repaint = true, variant = "gameSettings", var = "/graphics/dlss/DLAA_Sharpness", kind = "float", options = {} },
     
     -- RTX
@@ -34,7 +34,7 @@ local Settings = {
     { repaint = true, variant = "gameSettings", var = "/video/display/WindowMode", kind = "string_list", options = {} },
     { variant = "gameSettings", var = "/video/display/VSync", kind = "string_list", options = {}, combo = true },
 
-    { group = true, variant = "gameSettings", var = "/video/display/MaximumFPS_OnOff", kind = "bool", options = {} },
+    { variant = "gameSettings", var = "/video/display/MaximumFPS_OnOff", kind = "bool", options = {} },
     { variant = "gameSettings", var = "/video/display/MaximumFPS_Value", kind = "int", options = {} },
 
     { repaint = true, variant = "gameSettings", var = "/video/display/ReflexMode", kind = "string_list", options = {} },
@@ -68,7 +68,6 @@ local Settings = {
     -- { variant = "gameSettings", var = "/gameplay/performance/CrowdDensity", kind = "string_list", options = {} },
     
     -- { variant = "gameSettings", var = "/graphics/advanced/CrowdDensity", kind = "name_list", options = {} },
-    { variant = "gameSettings", var = "/graphics/advanced/LODPreset", kind = "string_list", options = {} },
     { variant = "gameSettings", var = "/graphics/advanced/GlobaIlluminationRange", kind = "string_list", options = {} },
     { variant = "gameSettings", var = "/graphics/advanced/ColorPrecision", kind = "string_list", options = {} },
     { variant = "gameSettings", var = "/graphics/advanced/SubsurfaceScatteringQuality", kind = "string_list", options = {} },

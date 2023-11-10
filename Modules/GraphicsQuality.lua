@@ -4,10 +4,13 @@ local Settings = require("Modules/Settings")
 local GameSettings = require("Modules/GameSettings")
 local Helpers = require("Modules/Helpers")
 local Cron = require("Modules/Cron")
+local GameHUD = require("Modules/GameHUD")
 
 function ConfirmChanges(callback)
-  GameSettings.Confirm()
   GameSettings.Save()
+  if GameSettings.NeedsConfirmation() then
+    GameSettings.Confirm()
+  end
 
   if callback then
     callback()
@@ -21,14 +24,16 @@ function GraphicsQuality.SetSettings(var, val)
   ConfirmChanges()
 end
 
-local settingPreset = false
+local isApplyingPreset = false
 
 local presetQueue = {}
-
+-- apply the last preset in the preset queue
 function GraphicsQuality.EnsurePreset()
   if #presetQueue == 0 then
     return
   end
+
+  local preset = presetQueue[#presetQueue]
 
   if App.isOverlayOpen then
     App.shouldCloseOverlay = true
@@ -37,33 +42,45 @@ function GraphicsQuality.EnsurePreset()
 
   App.shouldCloseOverlay = false
 
-  if settingPreset then
+  if isApplyingPreset then
     return
   end
 
-  local preset = presetQueue[#presetQueue]
 
   for k,v in pairs(presetQueue) do presetQueue[k]=nil end
 
   if preset then
-    settingPreset = true
+    isApplyingPreset = true
     preset()
   end
 end
-function GraphicsQuality.SetPreset(preset, presetName, delay)
+
+-- add preset to the preset queue
+function GraphicsQuality.RequestPreset(preset, presetName, delay)
   table.insert(presetQueue, function()
-    GraphicsQuality._SetPreset(preset, presetName, 0, function ()
-      settingPreset = false
+    local lastPreset = App.currentPreset
+    GraphicsQuality.ApplyPreset(preset, presetName, delay, function ()
+      isApplyingPreset = false
+      App.currentPreset = presetName
+      if lastPreset  ~= App.currentPreset then
+        -- GameHUD.ShowMessage('AGQ: "' .. App.currentPreset .. '" preset activated', 1.5)
+      end
     end)
   end)
 end
 
-function GraphicsQuality._SetPreset(preset, presetName, delay, cb)
+function GraphicsQuality.ApplyPreset(preset, presetName, delay, cb)
   if delay == nil then
     delay = 0
   end
 
   local function setPreset()
+    -- early quit if has new presets to apply - we always apply the last one
+    -- we do this here because i'm an idiot and this code is garbage
+    if #presetQueue > 0 then
+      return cb()
+    end
+
     if preset == 0 then
       return Helpers.PrintMsg("Couldn't set preset since it doesn't exist. Was it initialized properly?")
     end
@@ -81,22 +98,44 @@ function GraphicsQuality._SetPreset(preset, presetName, delay, cb)
       end
     end
 
+    local wasDlssdEnabled = GameSettings.Get("/graphics/dlss/DLSS_D") == true
+
+    -- When DLSS and PathTracing are on, the game will always activate DLSSD,
+    -- so we have to reapply it several times.
     function EnsureDlssd()
       for _,k in pairs(preset) do
         if k.var ==  "/graphics/dlss/DLSS_D" then
-          GameSettings.Set(k.var, k.value)
+          if tostring(GameSettings.Get(k.var)) ~= tostring(k.value) then
+            -- if not ignored value - set to whatever it is.
+            -- otherwise - check if current value is false to reapply it.
+            if not k.ignore then
+              Helpers.PrintDebugMsg(k.var .. " was set to " .. tostring(k.value))
+              GameSettings.Set(k.var, k.value)
+            else
+              if not wasDlssdEnabled then
+                Helpers.PrintDebugMsg(k.var .. " was set to " .. tostring(k.value))
+                GameSettings.Set(k.var, k.value)
+              end
+            end
+          end
         end
       end
     end
     
     if IsCurrentPreset(preset) then
       Helpers.PrintDebugMsg("skipping the same preset")
-      settingPreset = false
-      return
+      isApplyingPreset = false
+      App.currentPreset = presetName
+      return cb()
     end
 
     for _,k in pairs(preset) do
-      GameSettings.Set(k.var, k.value)
+      if tostring(GameSettings.Get(k.var)) ~= tostring(k.value) then
+        if not k.ignore then
+          Helpers.PrintDebugMsg(k.var .. " was set to " .. tostring(k.value))
+          GameSettings.Set(k.var, k.value)
+        end
+      end
       -- end
     end
 

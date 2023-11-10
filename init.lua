@@ -8,12 +8,12 @@ Helpers = require("Modules/Helpers")
 Tweaks = require("Modules/Tweaks")
 local Window = require("Modules/Window")
 
-App = { ["version"] = "1.4.0" }
+App = { ["version"] = "1.5.0" }
 local isLoaded = false
 App.inited = false
 App.isOverlayOpen = false
 App.isEnabled = true
-App.currentPreset = "normal"
+App.currentPreset = ""
 App.shouldCloseOverlay = false
 
 App.menuState = nil
@@ -38,7 +38,7 @@ end
 
 function API.DisableAndSetToNormal()
   App.isEnabled = false
-  GraphicsQuality.SetPreset(Config.inner.presets.normal, "normal")
+  GraphicsQuality.RequestPreset(Config.inner.presets.normal, "normal")
 end
 
 function API.IsEnabled()
@@ -112,8 +112,10 @@ function IsCurrentPreset(preset)
 
   for _,currentPresetSettings in pairs(currentPreset) do
     for _,presetSettings in pairs(preset) do
-      if presetSettings.var == currentPresetSettings.var and (presetSettings.value ~= currentPresetSettings.value) then
-        return false
+      if not presetSettings.ignore then
+        if presetSettings.var == currentPresetSettings.var and (presetSettings.value ~= currentPresetSettings.value) then
+          return false
+        end
       end
     end
   end
@@ -145,23 +147,30 @@ end
 function SetPresetIfNeeded()
   if not App.isEnabled then
     if Config.inner.switchToNormalWhenDisabled then
-      GraphicsQuality.SetPreset(Config.inner.presets.normal, "normal")
+      GraphicsQuality.RequestPreset(Config.inner.presets.normal, "normal")
     end
     return
   end
+  local delay = 0.1
 
   if IsPhotomode() and Config.inner.enabled.photo then
-    GraphicsQuality.SetPreset(Config.inner.presets.photo, "photo", 0.4)
+    delay = 0.8
+    GraphicsQuality.RequestPreset(Config.inner.presets.photo, "photo", delay)
   elseif IsMenu() and Config.inner.enabled.menu then
-    GraphicsQuality.SetPreset(Config.inner.presets.menu, "menu")
+    GraphicsQuality.RequestPreset(Config.inner.presets.menu, "menu", delay)
   elseif IsCombat() and Config.inner.enabled.combat then
-    GraphicsQuality.SetPreset(Config.inner.presets.combat, "combat")
+    delay = 0
+    GraphicsQuality.RequestPreset(Config.inner.presets.combat, "combat", delay)
   elseif IsVehicle() and Config.inner.enabled.vehicle then
-    GraphicsQuality.SetPreset(Config.inner.presets.vehicle, "vehicle")
+    GraphicsQuality.RequestPreset(Config.inner.presets.vehicle, "vehicle", delay)
   elseif IsScene() and Config.inner.enabled.scene then
-    GraphicsQuality.SetPreset(Config.inner.presets.scene, "scene")
+    GraphicsQuality.RequestPreset(Config.inner.presets.scene, "scene", delay)
   else
-    GraphicsQuality.SetPreset(Config.inner.presets.normal, "normal")
+    if App.currentPreset == "combat" then
+      delay = 0.8
+    end
+
+    GraphicsQuality.RequestPreset(Config.inner.presets.normal, "normal", delay)
   end
 end
 
@@ -189,6 +198,8 @@ function App.new()
 
   -- Cron.Every(0.2, GraphicsQuality.EnsurePreset, {})
 
+  local hadWeapon = false
+
   registerForEvent("onUpdate", function(delta)
     if not App.inited or not Config.isReady then
       return
@@ -210,6 +221,7 @@ function App.new()
     deltaAccum = deltaAccum + delta
     -- do stuff every N seconds
     if deltaAccum > checkEvery then
+      -- print(Helpers.highestHostileDetection())
       deltaAccum = 0
 
       CheckCombat()
@@ -219,25 +231,82 @@ function App.new()
 
   local lastIsInCombat = false
   local lastInVehiceState = false
+  local lastUnholstered = false
+  local ignoreForThisLocomotion = false
+  local lastLocomotion = 0
+
+  local upperBodyState = 0
+
   function CheckCombat()
     local combatState = Helpers.CombatState()
     local securityZone = Helpers.SecurityZone()
 
+    local unholstered = Config.inner.combatUnholstered and (Helpers.HasWeapon())
+
     local isInCombat =
       combatState == "InCombat" or
-      (Config.inner.combatUnholstered and Helpers.HasWeapon() and (not IsInVehicle() or Config.inner.combatUnholsteredVehicle)) or
+      (unholstered and (not IsInVehicle() or Config.inner.combatUnholsteredVehicle)) or
       (Config.inner.isDangerousAreaACombat and securityZone == "DangerousZone") or
       (Config.inner.isRestrictedAreaACombat and securityZone == "RestrictedZone")
 
-    local hasCombatStateChanged = lastIsInCombat ~= isInCombat
+      -- print(isInCombat)
 
+
+    local hasCombatStateChanged = lastIsInCombat ~= isInCombat
+    local unholsteredChanged = lastUnholstered ~= unholstered
+    local locomotionState = Helpers.LocomotionState()
+
+
+    -- print(Game.GetWorkspotSystem():IsActorInWorkspot(Game.GetPlayer()))
+
+    -- if one of the potentially temporary locomotions
+    -- 8     - Climb
+    -- 10-13 - Ladder
+    local isTempLocomotion = Config.inner.combatUnholstered 
+      and (locomotionState == 8 
+        or (locomotionState >= 10 and locomotionState <= 13)
+        or locomotionState == 14
+        or locomotionState == 17
+        or locomotionState == 23
+        or locomotionState == 24
+        or locomotionState == 25
+        or locomotionState == 26
+        or locomotionState == 27
+        or locomotionState == 28
+        or locomotionState == 29
+        or locomotionState == 31
+        or upperBodyState == 4
+        or (Helpers.IsInWorkspot() and not IsInVehicle() and not GameUI.IsVehicle())
+        or Helpers.GrappleState() > 0
+      )
+    if not isTempLocomotion and ignoreForThisLocomotion then
+      ignoreForThisLocomotion = false
+    end
+
+    if Config.inner.combatUnholstered then
+      ignoreForThisLocomotion = false
+    end
+    
     if hasCombatStateChanged then
       if isInCombat then
         OnCombatEnter()
       else
-        OnCombatExit()
+        -- if holstered a gun
+        if unholsteredChanged and not unholstered and Config.inner.combatUnholstered then
+          -- if one of the temporary locomotions, then ignore the combat state change
+          if isTempLocomotion then
+            ignoreForThisLocomotion = true
+          end
+        end
+
+        if not ignoreForThisLocomotion then
+          OnCombatExit()
+        end
       end
     end
+
+    lastUnholstered = unholstered
+    lastLocomotion = locomotionState
 
     lastIsInCombat = isInCombat
   end
@@ -322,7 +391,7 @@ function App.new()
     end
   end
   registerForEvent("onShutdown", function()
-    GraphicsQuality.SetPreset(Config.inner.presets.normal, "normal")
+    GraphicsQuality.RequestPreset(Config.inner.presets.normal, "normal")
   end)
   registerForEvent("onOverlayOpen", function ()
     App.isOverlayOpen = true
@@ -332,6 +401,10 @@ function App.new()
   end)
   registerForEvent("onInit", function ()
     Config.InitConfig()
+    App.isEnabled = Config.inner.enabledOnStart
+    if App.isEnabled then
+      App.currentPreset = "normal"
+    end
     assertDefaultPresetsExist()
 
     -- temp sorting fix
@@ -377,9 +450,28 @@ function App.new()
     -- Observe('RadialWheelController', 'RegisterBlackboards', function(_, loaded)
     --   isLoaded = loaded
     -- end)
+    
+    Observe('WeaponRosterGameController', 'OnWeaponDataChanged', function (_, state)
+      if Config.inner.combatUnholstered then
+        if ItemID.IsValid(FromVariant(state).weapon.weaponID) then
+          OnCombatEnter()
+        else
+          CheckCombat()
+        end
+      end
+    end)
 
     Observe('PlayerPuppet', 'OnGameAttached', function(self, b)
       self:RegisterInputListener(self, "OpenInventoryMenu")
+    end)
+
+    -- Observe('PlayerPuppet', 'OnCombatGadgetStateChanged', function(self, newState)
+    --   print("combatStateChanged", newState)
+    --   CheckCombat()
+    -- end)
+
+    Observe('PlayerPuppet', 'OnUpperBodyStateChange', function(self, newState)
+      upperBodyState = newState
     end)
 
     Observe("PlayerPuppet", "OnAction", function(_, action)
@@ -388,7 +480,7 @@ function App.new()
       -- if you open inventory without going into HUB menu first, settings are not applied for some reason.
       if actionName == "OpenInventoryMenu" then
         if Config.inner.enabled.menu then
-          GraphicsQuality.SetPreset(Config.inner.presets.menu, "menu")
+          GraphicsQuality.RequestPreset(Config.inner.presets.menu, "menu")
         end
       end
     end)
@@ -409,38 +501,47 @@ function App.new()
     if Config.inner.disableAutoswitchOnHotkey then
       App.isEnabled = false
     end
-    GraphicsQuality.SetPreset(Config.inner.presets.normal, "normal")
+    GraphicsQuality.RequestPreset(Config.inner.presets.normal, "normal")
   end)
   registerHotkey("agq_toggle_force_photomode", 'Force "Photomode" preset', function()
     if Config.inner.disableAutoswitchOnHotkey then
       App.isEnabled = false
     end
-    GraphicsQuality.SetPreset(Config.inner.presets.photo, "photo", 0.4)
+    GraphicsQuality.RequestPreset(Config.inner.presets.photo, "photo", 0)
   end)
   registerHotkey("agq_toggle_force_menu", 'Force "Menu" preset', function()
     if Config.inner.disableAutoswitchOnHotkey then
       App.isEnabled = false
     end
-    GraphicsQuality.SetPreset(Config.inner.presets.menu, "menu")
+    GraphicsQuality.RequestPreset(Config.inner.presets.menu, "menu")
   end)
   registerHotkey("agq_toggle_force_combat", 'Force "Combat" preset', function()
     if Config.inner.disableAutoswitchOnHotkey then
       App.isEnabled = false
     end
-    GraphicsQuality.SetPreset(Config.inner.presets.combat, "combat")
+    GraphicsQuality.RequestPreset(Config.inner.presets.combat, "combat")
   end)
   registerHotkey("agq_toggle_force_vehicle", 'Force "Vehicle" preset', function()
     if Config.inner.disableAutoswitchOnHotkey then
       App.isEnabled = false
     end
-    GraphicsQuality.SetPreset(Config.inner.presets.vehicle, "vehicle")
+    GraphicsQuality.RequestPreset(Config.inner.presets.vehicle, "vehicle")
   end)
   registerHotkey("agq_toggle_force_scene", 'Force "Scene" preset', function()
     if Config.inner.disableAutoswitchOnHotkey then
       App.isEnabled = false
     end
-    GraphicsQuality.SetPreset(Config.inner.presets.scene, "scene")
+    GraphicsQuality.RequestPreset(Config.inner.presets.scene, "scene")
   end)
+  
+  for var=1,10 do
+    registerHotkey("agq_force_custom_" .. var, "Force custom preset #" .. tostring(var), function()
+      if Config.inner.disableAutoswitchOnHotkey then
+        App.isEnabled = false
+      end
+      GraphicsQuality.RequestPreset(Config.inner.presets[tostring(var)], tostring(var))
+    end)
+  end
 
   return {
     version = App.version,

@@ -4,14 +4,16 @@ GameSettings = require("Modules/GameSettings")
 
 local Config = {
   inner = {
+    currPresetTab = "normal",
     isStealthACombat = false,
+    enabledOnStart = true,
     isRestrictedAreaACombat = false,
-    isDangerousAreaACombat = false,
+    isDangerousAreaACombat = true,
     combatUnholstered = true,
     combatUnholsteredVehicle = false,
     isDebug = false,
     switchToNormalWhenDisabled = false,
-    disableAutoswitchOnHotkey = false,
+    disableAutoswitchOnHotkey = true,
     presets = {
       normal = 0,
       menu = 0,
@@ -19,6 +21,16 @@ local Config = {
       combat = 0,
       vehicle = 0,
       scene = 0,
+      ["1"] = 0,
+      ["2"] = 0,
+      ["3"] = 0,
+      ["4"] = 0,
+      ["5"] = 0,
+      ["6"] = 0,
+      ["7"] = 0,
+      ["8"] = 0,
+      ["9"] = 0,
+      ["10"] = 0,
     },
     enabled = {
       normal = true,
@@ -27,6 +39,16 @@ local Config = {
       menu = false,
       vehicle = false,
       scene = false,
+      ["1"] = false,
+      ["2"] = false,
+      ["3"] = false,
+      ["4"] = false,
+      ["5"] = false,
+      ["6"] = false,
+      ["7"] = false,
+      ["8"] = false,
+      ["9"] = false,
+      ["10"] = false,
     },
     tweaks = { },
     notifications = {
@@ -57,8 +79,30 @@ function Config.Migrate()
 end
 
 function Migrate()
-  if Config.inner.disableAutoswitchOnHotkey == nil then
-    Config.inner.disableAutoswitchOnHotkey = false
+  -- if Config.inner.disableAutoswitchOnHotkey == nil then
+  --   Config.inner.disableAutoswitchOnHotkey = false
+  -- end
+
+  Config.inner.switchToNormalWhenDisabled = false
+
+  if not Config.inner.presets["1"] then
+    Config.inner.presets["1"] = 0
+    Config.inner.presets["2"] = 0
+    Config.inner.presets["3"] = 0
+    Config.inner.presets["4"] = 0
+    Config.inner.presets["5"] = 0
+    Config.inner.presets["6"] = 0
+    Config.inner.presets["7"] = 0
+    Config.inner.presets["8"] = 0
+    Config.inner.presets["9"] = 0
+    Config.inner.presets["10"] = 0
+  end
+
+  if Config.inner.enabledOnStart == nil then
+    Config.inner.enabledOnStart = true
+  end
+  if Config.inner.currPresetTab == nil then
+    Config.inner.currPresetTab = "normal"
   end
 
   if Config.inner.combatUnholstered == nil then

@@ -1,5 +1,14 @@
 local Changelog = {
   {
+    version = "1.5.0",
+    changes = {
+      ' - Better detection of combat preset (combat when unholstered is more consistent)',
+      ' - Custom presets with shortcuts',
+      ' - New option to mark specific settings as inactive',
+      ' - Slight UI improvements',
+    }
+  },
+  {
     version = "1.4.0",
     changes = {
       ' - Ray Reconstruction (DLSSD) support',

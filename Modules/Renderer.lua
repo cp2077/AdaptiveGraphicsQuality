@@ -383,6 +383,7 @@ end
 ---@field colors table
 ---@field vars table
 ---@field tooltip string
+---@field id table
 RCheckBoxParams = {}
 ---@param text string
 ---@param p RCheckBoxParams
@@ -395,7 +396,13 @@ function R.CheckBox(text, state, p)
 
   return WrapColVars(
   function()
+    if p.id then
+      ImGui.PushID(p.id)
+    end
     local value, pressed = ImGui.Checkbox(text, state)
+    if p.id then
+      ImGui.PopID()
+    end
     if p.tooltip and ImGui.IsItemHovered() then
       ImGui.BeginTooltip()
       ImGui.SetTooltip(p.tooltip)
