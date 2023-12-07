@@ -98,13 +98,13 @@ function GraphicsQuality.ApplyPreset(preset, presetName, delay, cb)
       end
     end
 
-    local wasDlssdEnabled = GameSettings.Get("/graphics/dlss/DLSS_D") == true
+    local wasDlssdEnabled = GameSettings.Get("/graphics/presets/DLSS_D") == true
 
     -- When DLSS and PathTracing are on, the game will always activate DLSSD,
     -- so we have to reapply it several times.
     function EnsureDlssd()
       for _,k in pairs(preset) do
-        if k.var ==  "/graphics/dlss/DLSS_D" then
+        if k.var ==  "/graphics/presets/DLSS_D" then
           if tostring(GameSettings.Get(k.var)) ~= tostring(k.value) then
             -- if not ignored value - set to whatever it is.
             -- otherwise - check if current value is false to reapply it.
@@ -168,6 +168,9 @@ function GraphicsQuality.GetCurrentPreset()
     local value = nil
     if k.kind == "string_list" or k.kind == "int_list" then
       local opt, cur = GameSettings.Options(k.var)
+      if not opt then
+        print(k.var)
+      end
       value = opt[cur]
     elseif k.kind == "name_list" then
       local opt, cur = GameSettings.Options(k.var)

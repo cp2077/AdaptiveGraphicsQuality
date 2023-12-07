@@ -266,7 +266,42 @@ local function renderPresetTabContent(presetName)
         varNameDetailed = "RayReconstruction"
       end
 
-      if info then
+      local show = true
+
+      local resScalingIdx = GetSettingValueIdx("/graphics/presets/ResolutionScaling", presetName)
+      if (varNameBase == "presets" and varNameDetailed ~= "ResolutionScaling") then
+        if (Config.inner.presets[presetName][resScalingIdx].ignore or Config.inner.presets[presetName][resScalingIdx].value == "Off") then
+          show = false
+        else
+          show = false
+          local v = varNameDetailed
+          if Config.inner.presets[presetName][resScalingIdx].value == "DLSS" then
+            if v == "RayReconstruction" or v == "DLSS_NewSharpness"  or v == "DLSSFrameGen" or v == "DLSSFrameGen" or v == "DLSS" then
+              show = true
+            end
+          end
+  
+          if Config.inner.presets[presetName][resScalingIdx].value == "FSR" then
+            if v == "FSR2" or v == "FSR2_Sharpness" then
+              show = true
+            end
+          end
+
+          if Config.inner.presets[presetName][resScalingIdx].value == "XeSS" then
+            if v == "XESS" or v == "XESS_Sharpness" then
+              show = true
+            end
+          end
+        end
+
+      end
+
+      if (varNameBase == "presets" and varNameDetailed ~= "ResolutionScaling")
+          and (Config.inner.presets[presetName][resScalingIdx].ignore or Config.inner.presets[presetName][resScalingIdx].value == "Off") then
+        show = false
+      end
+
+      if info and show then
         if info.group then
           R.NewLine(1)
           padding()
@@ -382,6 +417,12 @@ local function renderPresetTabContent(presetName)
           displayName = "Path Tracing"
         elseif displayName == "RayReconstruction" then
           displayName = "DLSS Ray Reconstruction"
+        elseif displayName == "DLSS_NewSharpness" then
+          displayName = "DLSS Sharpness"
+        elseif displayName == "FSR2_Sharpness" then
+          displayName = "AMD FSR 2.1 Sharpening"
+        elseif displayName == "XESS_Sharpness" then
+          displayName = "Intel XeSS 1.2 Sharpness"
         elseif displayName == "RayTracedReflections" then
           displayName = "Ray-Traced Reflections"
         elseif displayName == "RayTracedSunShadows" then
@@ -449,7 +490,7 @@ local function renderPresetTabContent(presetName)
         elseif displayName == "FSR2" then
           displayName = "AMD FidelityFX Super Resolution 2.1"
         elseif displayName == "XESS" then
-          displayName = "Intel Xe Super Sampling 1.1"
+          displayName = "Intel Xe Super Sampling 1.2"
         elseif displayName == "DLAA" then
           displayName = "NVIDIA DLAA"
         end
@@ -475,16 +516,46 @@ local function renderPresetTabContent(presetName)
           end
         end
 
+        local function get(obj, key)
+          local ok, result = pcall(function ()
+            return obj[key]
+          end)
+          if ok then
+            return result
+          else
+            print(result)
+          end
+
+          return nil
+        end
 
 
-        if setting.kind == "int" then
-          local settingsValue = (type(currentValue) == "number") and
-            currentValue or 100
-          local itemID = presetName .. tostring(i) .. tostring(settingsValue)
+        if setting.kind == "int" or setting.kind == "float" then
           local value
           local used
+          local step = (get(info.options, "step") ~= nil) and get(info.options, "step") or 5
+          local max = (get(info.options, "max") ~= nil) and info.options["max"] or 100
+          local min = (get(info.options, "min") ~= nil) and info.options["min"] or 0
+          local default = (get(info.options, "default") ~= nil) and info.options["default"] or 100
+          local settingsValue = (type(currentValue) == "number") and
+            currentValue or GameSettings.Get(setting.var)
+          if settingsValue == nil then
+            settingsValue = default
+          end
+          if settingsValue > max then
+            settingsValue = max
+          end
+          if settingsValue < min then
+            settingsValue = min
+          end
+          local itemID = presetName .. tostring(i) .. tostring(settingsValue)
+
           R.ItemWidth(250, function()
-            value, used = R.InputInt("", settingsValue, { id = itemID, step = 5, stepFast = 10, colors = mainTextColors })
+            if setting.kind == "float" then
+              value, used = R.InputFloat("", settingsValue, { id = itemID, step = step, stepFast = 10, colors = mainTextColors })
+            else
+              value, used = R.InputInt("", settingsValue, { id = itemID, step = step, stepFast = 10, colors = mainTextColors })
+            end
           end)
 
           if used and not isIgnore then
@@ -529,13 +600,6 @@ local function renderPresetTabContent(presetName)
             --   SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
             -- end
 
-            if varNameDetailed == "DynamicResolutionScaling" then
-              SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS", "Off")
-              SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR2", "Off")
-              SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/XESS", "Off")
-              SetPresetSettingsValue(presetName, "/graphics/raytracing/RayTracing", false)
-            end
-
             Config.inner.presets[presetName][i].value = value
             OnConfigChange()
           end
@@ -579,24 +643,6 @@ local function renderPresetTabContent(presetName)
 
               local buttonID = presetName .. tostring(i) .. tostring(kOpt) .. "switch"
               if R.Button(buttonText, { tooltip = tooltip, disabled = isActiveOption, id = buttonID, colors = colors }) and not isActiveOption and not isIgnore then
-                if varNameDetailed == "DLSS" then
-                  SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
-                  SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR2", "Off")
-                end
-                if varNameDetailed == "FSR2" then
-                  SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS", "Off")
-                  SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
-                  SetPresetSettingsValue(presetName, "/graphics/dlss/DLSSFrameGen", false)
-                  SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS_D", false)
-                end
-                if varNameDetailed == "XESS" then
-                  SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS", "Off")
-                  SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/FSR2", "Off")
-                  SetPresetSettingsValue(presetName, "/graphics/dynamicresolution/DynamicResolutionScaling", false)
-                  SetPresetSettingsValue(presetName, "/graphics/dlss/DLSSFrameGen", false)
-                  SetPresetSettingsValue(presetName, "/graphics/dlss/DLSS_D", false)
-                end
-
                 if isOverride then
                   GraphicsQuality.SetSettings(setting.var, kOpt)
                 else

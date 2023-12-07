@@ -1,5 +1,11 @@
 local Changelog = {
   {
+    version = "1.5.1",
+    changes = {
+      ' - 2.1 support'
+    }
+  },
+  {
     version = "1.5.0",
     changes = {
       ' - Better detection of combat preset (combat when unholstered is more consistent)',

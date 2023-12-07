@@ -2,27 +2,21 @@ local Settings = {
   list = {
 
     -- DLSS
-    { repaint = true, variant = "gameSettings", var = "/graphics/dlss/DLSS", kind = "string_list", options = {} },
-    { repaint = true, variant = "gameSettings", var = "/graphics/dlss/DLAA", kind = "bool", options = {} },
-    { repaint = false, variant = "gameSettings", var = "/graphics/dlss/DLSSFrameGen", kind = "bool", options = {} },
-    -- { repaint = false, variant = "gameSettings", var = "/graphics/dlss/DLSS_Sharpness", kind = "float", options = {} },
-    -- { repaint = true, variant = "gameSettings", var = "/graphics/dlss/DLSS_D", kind = "bool", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/presets/ResolutionScaling", kind = "string_list", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/presets/DLSS", kind = "string_list", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/presets/DLSS_NewSharpness", kind = "float", options = { default = 0, max = 1, step = 0.1, min = 0 } },
+    { repaint = true, variant = "gameSettings", var = "/graphics/presets/DLSSFrameGen", kind = "bool", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/presets/DLSS_D", kind = "bool", options = {} },
 
-    { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/FSR2", kind = "string_list", options = {} },
-    -- { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/FSR2_Sharpness", kind = "float", options = {} },
-
-    { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/XESS", kind = "string_list", options = {} },
-    -- { repaint = true, variant = "gameSettings", var = "/graphics/dynamicresolution/XESS_Sharpness", kind = "float", options = {} },
-
-    -- { repaint = true, variant = "gameSettings", var = "/graphics/dlss/DLAA_Sharpness", kind = "float", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/presets/DLAA_NewSharpness", kind = "float", options = { default = 0, max = 1, step = 0.1, min = 0 } },
+    { repaint = true, variant = "gameSettings", var = "/graphics/presets/FSR2", kind = "string_list", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/presets/FSR2_Sharpness", kind = "float", options = { default = 0, max = 1, step = 0.1, min = 0 } },
+    { repaint = true, variant = "gameSettings", var = "/graphics/presets/XESS", kind = "string_list", options = {} },
+    { repaint = true, variant = "gameSettings", var = "/graphics/presets/XESS_Sharpness", kind = "float", options = { default = 0, max = 1, step = 0.1, min = 0 } },
     
     -- RTX
     { group = true, variant = "gameSettings", var = "/graphics/raytracing/RayTracing", kind = "bool", options = {} },
     { variant = "gameSettings", var = "/graphics/raytracing/RayTracedPathTracing", kind = "bool", options = {} },
-    { repaint = true, variant = "gameSettings", var = "/graphics/dlss/DLSS_D", kind = "bool", options = {} },
-
-    -- { variant = "fake",  var = "Developer/FeatureToggles/RayReconstruction", kind = "bool", options = {} },
-    -- { variant = "gameOptions",  var = "Developer/FeatureToggles", key = "DLSSD", kind = "bool", options = {} },
   
     { variant = "gameSettings", var = "/graphics/raytracing/RayTracedReflections", kind = "bool", options = {} },
     { variant = "gameSettings", var = "/graphics/raytracing/RayTracedSunShadows", kind = "bool", options = {} },
